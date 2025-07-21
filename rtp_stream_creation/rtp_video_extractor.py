@@ -33,12 +33,11 @@ class RTPVideoExtractor:
     def get_extension(self):
         """Get the appropriate file extension based on codec."""
         return "mp4"  # MP4 container works for both H.264 and H.265
-    
+
     def process_pcap(self):
         """Extract RTP packets from PCAP and rebuild the video stream."""
         print(f"Reading packets from {self.input_pcap}...")
         
-        # Read all packets from the PCAP file
         try:
             packets = rdpcap(self.input_pcap)
         except Exception as e:
@@ -47,185 +46,168 @@ class RTPVideoExtractor:
         
         print(f"Found {len(packets)} packets in the PCAP file")
         
-        # Store packets by sequence number to handle out-of-order delivery
         rtp_packets = {}
-        # Track fragmented NAL units (FU-A/FU-B)
-        fragments = defaultdict(list)
-        # Store complete NAL units in order
-        nal_units = []
         
-        # Extract RTP packets
+        # Extract RTP packets keyed by sequence number for sorting
         for packet in packets:
             if UDP in packet and Raw in packet:
                 udp_payload = bytes(packet[Raw])
-                
-                # Check if this looks like an RTP packet (version 2)
                 if len(udp_payload) >= 12 and (udp_payload[0] >> 6) == 2:
                     # Parse RTP header
-                    version = (udp_payload[0] >> 6) & 0x3
-                    padding = (udp_payload[0] >> 5) & 0x1
-                    extension = (udp_payload[0] >> 4) & 0x1
                     cc = udp_payload[0] & 0x0F
-                    marker = (udp_payload[1] >> 7) & 0x1
-                    payload_type = udp_payload[1] & 0x7F
-                    sequence_number = (udp_payload[2] << 8) | udp_payload[3]
-                    timestamp = (udp_payload[4] << 24) | (udp_payload[5] << 16) | \
-                                (udp_payload[6] << 8) | udp_payload[7]
-                    ssrc = (udp_payload[8] << 24) | (udp_payload[9] << 16) | \
-                           (udp_payload[10] << 8) | udp_payload[11]
-                    
-                    # Calculate header size
                     header_size = 12 + 4 * cc
-                    if extension:
-                        if len(udp_payload) >= header_size + 4:
-                            ext_length = (udp_payload[header_size+2] << 8) | udp_payload[header_size+3]
-                            header_size += 4 + 4 * ext_length
+                    extension = (udp_payload[0] >> 4) & 0x1
                     
-                    # Extract RTP payload
+                    # Handle RTP header extensions
+                    if extension and len(udp_payload) >= header_size + 4:
+                        ext_len = (udp_payload[header_size+2] << 8) | udp_payload[header_size+3]
+                        header_size += 4 + 4 * ext_len
+                    
                     if len(udp_payload) > header_size:
+                        seq = (udp_payload[2] << 8) | udp_payload[3]
+                        marker = (udp_payload[1] >> 7) & 0x1
+                        payload_type = udp_payload[1] & 0x7F
+                        timestamp = (udp_payload[4] << 24) | (udp_payload[5] << 16) | (udp_payload[6] << 8) | udp_payload[7]
                         payload = udp_payload[header_size:]
-                        rtp_packets[sequence_number] = {
-                            'payload': payload,
-                            'marker': marker,
-                            'timestamp': timestamp
-                        }
+                        
+                        # Filter only video RTP packets (payload type 96)
+                        if payload_type == 96:
+                            rtp_packets[seq] = {
+                                'payload': payload, 
+                                'marker': marker, 
+                                'timestamp': timestamp
+                            }
         
         if not rtp_packets:
-            print("No RTP packets found in the PCAP file")
+            print("No video RTP packets found in the PCAP file")
             return False
         
-        print(f"Found {len(rtp_packets)} RTP packets")
+        print(f"Found {len(rtp_packets)} video RTP packets")
         
-        # Process packets in sequence order
-        current_timestamp = None
+        # Reconstruct NAL units from RTP packets
+        nal_units = self.reconstruct_nal_units(rtp_packets)
         
-        for seq in sorted(rtp_packets.keys()):
-            pkt = rtp_packets[seq]
-            payload = pkt['payload']
-            marker = pkt['marker']
-            timestamp = pkt['timestamp']
-            
-            # Detect timestamp changes (new frame)
-            if current_timestamp is not None and timestamp != current_timestamp:
-                # Process any pending fragments before moving to new frame
-                for ts in list(fragments.keys()):
-                    if ts != timestamp:
-                        # Concatenate fragments if we have any
-                        if fragments[ts]:
-                            reconstructed_nal = self.reconstruct_nal_from_fragments(fragments[ts])
-                            if reconstructed_nal:
-                                nal_units.append(reconstructed_nal)
-                        del fragments[ts]
-            
-            current_timestamp = timestamp
-            
-            if len(payload) < 1:
-                continue
-                
-            # For H.264
-            if self.codec == "h264":
-                nal_type = payload[0] & 0x1F
-                
-                # Single NAL unit
-                if nal_type <= 23:
-                    # Add start code and the NAL unit
-                    nal_units.append(b'\x00\x00\x00\x01' + payload)
-                
-                # FU-A (Fragmentation Units)
-                elif nal_type == 28 and len(payload) >= 2:
-                    fu_header = payload[1]
-                    start_bit = (fu_header >> 7) & 0x1
-                    end_bit = (fu_header >> 6) & 0x1
-                    nal_type = fu_header & 0x1F
-                    
-                    if start_bit:
-                        # Start of fragmented NAL unit
-                        fragments[timestamp] = [bytes([payload[0] & 0xE0 | nal_type]) + payload[2:]]
-                    elif fragments[timestamp]:
-                        # Middle or end fragment
-                        fragments[timestamp].append(payload[2:])
-                        
-                        if end_bit:
-                            # End of fragmentation, reconstruct the NAL
-                            reconstructed_nal = self.reconstruct_nal_from_fragments(fragments[timestamp])
-                            if reconstructed_nal:
-                                nal_units.append(reconstructed_nal)
-                            del fragments[timestamp]
-                
-                # STAP-A (Single-time aggregation packet)
-                elif nal_type == 24:
-                    offset = 1
-                    while offset + 2 <= len(payload):
-                        size = (payload[offset] << 8) | payload[offset+1]
-                        offset += 2
-                        if offset + size <= len(payload):
-                            nal_units.append(b'\x00\x00\x00\x01' + payload[offset:offset+size])
-                        offset += size
-            
-            # For H.265
-            elif self.codec == "h265" and len(payload) >= 2:
-                nal_type = (payload[0] >> 1) & 0x3F
-                
-                # Single NAL unit
-                if nal_type < 48:
-                    nal_units.append(b'\x00\x00\x00\x01' + payload)
-                
-                # Fragmentation Units
-                elif nal_type == 49 and len(payload) >= 3:
-                    fu_header = payload[2]
-                    start_bit = (fu_header >> 7) & 0x1
-                    end_bit = (fu_header >> 6) & 0x1
-                    nal_type = fu_header & 0x3F
-                    
-                    if start_bit:
-                        # Create new NAL header
-                        original_header = ((payload[0] & 0x81) | (nal_type << 1)).to_bytes(1, byteorder='big')
-                        fragments[timestamp] = [original_header + payload[1:2] + payload[3:]]
-                    elif fragments[timestamp]:
-                        fragments[timestamp].append(payload[3:])
-                        
-                        if end_bit:
-                            reconstructed_nal = self.reconstruct_nal_from_fragments(fragments[timestamp])
-                            if reconstructed_nal:
-                                nal_units.append(reconstructed_nal)
-                            del fragments[timestamp]
+        if not nal_units:
+            print("No NAL units could be reconstructed")
+            return False
         
-        # Process any remaining fragments
-        for ts in fragments:
-            if fragments[ts]:
-                reconstructed_nal = self.reconstruct_nal_from_fragments(fragments[ts])
-                if reconstructed_nal:
-                    nal_units.append(reconstructed_nal)
-        
-        # Write NAL units to temporary file
+        # Write all NAL units to the temporary file
         with open(self.temp_raw_file, 'wb') as f:
             for nal in nal_units:
                 f.write(nal)
         
         print(f"Extracted {len(nal_units)} NAL units to {self.temp_raw_file}")
         
-        # Convert raw NAL units to a playable video file
+        # Convert raw NAL units to output video file using ffmpeg
         return self.convert_to_video()
-    
-    def reconstruct_nal_from_fragments(self, fragments):
+
+    def reconstruct_nal_units(self, rtp_packets):
         """
-        Reconstruct a complete NAL unit from fragments.
+        Reconstruct NAL units from RTP packets, handling fragmentation.
         
         Args:
-            fragments (list): List of NAL unit fragments
+            rtp_packets (dict): Dictionary of RTP packets keyed by sequence number
             
         Returns:
-            bytes: Reconstructed NAL unit with start code
+            list: List of complete NAL units with start codes
         """
-        if not fragments:
-            return None
+        nal_units = []
+        fragments = {}  # key: start_seq, value: list of payload parts for FU reassembly
+        fu_start_seq = None  # track current FU-A start sequence
         
-        # Concatenate all fragments
-        reconstructed = b'\x00\x00\x00\x01'
-        for fragment in fragments:
-            reconstructed += fragment
+        # Process packets in sequence order
+        sorted_seq_nums = sorted(rtp_packets.keys())
         
-        return reconstructed
+        for seq in sorted_seq_nums:
+            pkt = rtp_packets[seq]
+            payload = pkt['payload']
+            marker = pkt['marker']
+            timestamp = pkt['timestamp']
+            
+            if len(payload) < 1:
+                continue
+            
+            if self.codec == "h264":
+                nal_unit_type = payload[0] & 0x1F
+                
+                if nal_unit_type >= 1 and nal_unit_type <= 23:
+                    # Single NAL unit packet
+                    nal_units.append(b'\x00\x00\x00\x01' + payload)
+                
+                elif nal_unit_type == 28 and len(payload) >= 2:
+                    # FU-A fragmentation unit
+                    fu_header = payload[1]
+                    start_bit = (fu_header >> 7) & 0x1
+                    end_bit = (fu_header >> 6) & 0x1
+                    original_nal_type = fu_header & 0x1F
+                    
+                    if start_bit:
+                        # Start new fragment
+                        fu_start_seq = seq
+                        # Rebuild NAL header for the FU
+                        nal_header = bytes([(payload[0] & 0xE0) | original_nal_type])
+                        fragments[fu_start_seq] = [nal_header + payload[2:]]
+                    elif fu_start_seq is not None and fu_start_seq in fragments:
+                        # Middle or end fragment
+                        fragments[fu_start_seq].append(payload[2:])
+                        
+                        if end_bit:
+                            # Reassemble FU-A NAL unit
+                            nal_data = b''.join(fragments[fu_start_seq])
+                            nal_units.append(b'\x00\x00\x00\x01' + nal_data)
+                            del fragments[fu_start_seq]
+                            fu_start_seq = None
+                
+                elif nal_unit_type == 24:
+                    # STAP-A aggregation packet
+                    offset = 1
+                    while offset < len(payload):
+                        if offset + 2 > len(payload):
+                            break
+                        size = (payload[offset] << 8) | payload[offset + 1]
+                        offset += 2
+                        if offset + size <= len(payload):
+                            nal_units.append(b'\x00\x00\x00\x01' + payload[offset:offset+size])
+                            offset += size
+                        else:
+                            break
+            
+            elif self.codec == "h265":
+                nal_unit_type = (payload[0] >> 1) & 0x3F
+                
+                if nal_unit_type < 48:
+                    # Single NAL unit
+                    nal_units.append(b'\x00\x00\x00\x01' + payload)
+                
+                elif nal_unit_type == 49 and len(payload) >= 3:
+                    # FU fragmentation unit for H265
+                    fu_header = payload[2]
+                    start_bit = (fu_header >> 7) & 0x1
+                    end_bit = (fu_header >> 6) & 0x1
+                    original_nal_type = fu_header & 0x3F
+                    
+                    if start_bit:
+                        fu_start_seq = seq
+                        # Compose reconstructed NAL header
+                        nal_header_first_byte = (payload[0] & 0x81) | (original_nal_type << 1)
+                        nal_header = bytes([nal_header_first_byte]) + payload[1:2]
+                        fragments[fu_start_seq] = [nal_header + payload[3:]]
+                    elif fu_start_seq is not None and fu_start_seq in fragments:
+                        fragments[fu_start_seq].append(payload[3:])
+                        
+                        if end_bit:
+                            nal_data = b''.join(fragments[fu_start_seq])
+                            nal_units.append(b'\x00\x00\x00\x01' + nal_data)
+                            del fragments[fu_start_seq]
+                            fu_start_seq = None
+        
+        # Flush any remaining fragmented units (incomplete ones)
+        for start_seq, parts in fragments.items():
+            if parts:
+                nal_data = b''.join(parts)
+                nal_units.append(b'\x00\x00\x00\x01' + nal_data)
+        
+        return nal_units
     
     def convert_to_video(self):
         """
@@ -255,7 +237,7 @@ class RTPVideoExtractor:
         finally:
             # Clean up the temporary file
             if os.path.exists(self.temp_raw_file):
-                os.remove(self.temp_raw_file)
+               os.remove(self.temp_raw_file)
 
 
 def main():
