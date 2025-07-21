@@ -1,22 +1,47 @@
 import os
 import cv2
 import sys
+import argparse
 
-original_folder = 'original_frames_1920_1080'
+# Default settings
 original_res = [1920, 1080]
-target_downscaled_res = [1280, 720]
+# `original_folder` may be overridden from command-line arguments later
+original_folder = f"original_frames_{original_res[0]}_{original_res[1]}"
+target_downscaled_res = [1600, 900]
 target_upscaled_res = [1920, 1080]
-downscaled_folder = 'downscaled_original_frames_from_' + str(original_res[0]) + '_' + str(original_res[1]) + '_to_' + str(target_downscaled_res[0]) + '_' + str(target_downscaled_res[1])
-upscaled_folder = 'upscaled_original_frames_from_' + str(target_downscaled_res[0]) + '_' + str(target_downscaled_res[1]) + '_to_' + str(target_upscaled_res[0]) + '_' + str(target_upscaled_res[1])
+
+
+def get_downscaled_folder():
+    """Return folder name for downscaled images based on current settings."""
+    return (f"downscaled_original_frames_from_{original_res[0]}_{original_res[1]}_"
+            f"to_{target_downscaled_res[0]}_{target_downscaled_res[1]}")
+
+
+def get_upscaled_folder():
+    """Return folder name for upscaled images based on current settings."""
+    return (f"upscaled_original_frames_from_{target_downscaled_res[0]}_{target_downscaled_res[1]}_"
+            f"to_{target_upscaled_res[0]}_{target_upscaled_res[1]}")
 
 
 def downscale_images():
+    downscaled_folder = get_downscaled_folder()
     os.makedirs(downscaled_folder, exist_ok=True)
+
+    if not os.path.exists(original_folder):
+        print(f"[ERROR] Folder '{original_folder}' does not exist.")
+        sys.exit(1)
+
     image_files = [f for f in os.listdir(original_folder) if f.endswith('.png')]
-    
+
+    if not image_files:
+        print(f"[WARNING] No PNG images found in '{original_folder}'.")
+
     for image_file in image_files:
         image_path = os.path.join(original_folder, image_file)
         image = cv2.imread(image_path)
+        if image is None:
+            print(f"Skipped {image_file}: could not read file.")
+            continue
 
         # Resize to target downscaled resolution
         image_resized = cv2.resize(image, target_downscaled_res, interpolation=cv2.INTER_AREA)
@@ -29,17 +54,22 @@ def downscale_images():
 
 
 def upscale_images():
-    # Check if downscaled folder exists
+    downscaled_folder = get_downscaled_folder()
+    upscaled_folder = get_upscaled_folder()
+
     if not os.path.exists(downscaled_folder):
         print(f"[ERROR] Folder '{downscaled_folder}' does not exist.")
-        print("Please downscale the images first or provide the expected resolution by editing 'target_downscaled_res'.")
-        sys.exit(0)
+        print("Please downscale the images first or ensure the folder name is correct.")
+        sys.exit(1)
+
+    if not os.path.exists(original_folder):
+        print(f"[ERROR] Folder '{original_folder}' does not exist.")
+        sys.exit(1)
 
     os.makedirs(upscaled_folder, exist_ok=True)
     image_files = [f for f in os.listdir(original_folder) if f.endswith('.png')]
-    
+
     for image_file in image_files:
-        #original_path = os.path.join(original_folder, image_file)
         downscaled_path = os.path.join(downscaled_folder, image_file)
         
         # Load original for size reference
@@ -65,16 +95,19 @@ def upscale_images():
 
 
 if __name__ == "__main__":
-    print("Choose an option:")
-    print("1. Downscale images")
-    print("2. Upscale images from downscaled versions")
-    choice = input("Enter 1 or 2: ").strip()
+    parser = argparse.ArgumentParser(description="Downscale or upscale PNG images.")
+    parser.add_argument("mode", choices=["down", "up"], help="down: downscale, up: upscale from downscaled")
+    parser.add_argument("--folder", "-f", dest="folder", default=None,
+                        help="Path to folder containing original PNG frames. If omitted, defaults to original_frames_<WxH>.")
+    args = parser.parse_args()
 
-    if choice == '1':
+    # Override original_folder if provided
+    if args.folder:
+        original_folder = args.folder  # override default folder
+
+    if args.mode == "down":
         downscale_images()
-    elif choice == '2':
-        upscale_images()
     else:
-        print("Invalid choice. Please enter 1 or 2.")
+        upscale_images()
 
     cv2.destroyAllWindows()

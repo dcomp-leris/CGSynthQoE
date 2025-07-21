@@ -2,12 +2,16 @@
 """
 Video Quality Plots Generator
 ----------------------------
-This script generates PSNR and SSIM plots comparing test videos against a reference video.
+This script generates video quality plots comparing test videos against a reference video.
 It creates separate graphs showing quality metrics over time.
+
+By default, it plots four key metrics: PSNR, SSIM, LPIPS, and VMAF.
+Use the --all-metrics flag to plot all available metrics.
 
 Usage:
     python video_quality_plots.py reference_video.mp4 test_video.mp4 -o output_plot.png
     python video_quality_plots.py reference_video.mp4 test_video1.mp4 test_video2.mp4 -o comparison_plot.png
+    python video_quality_plots.py reference_video.mp4 test_video.mp4 -o output_plot.png --all-metrics
 
 Author: CGSynth Project
 """
@@ -32,6 +36,14 @@ import json
 import tempfile
 import math
 warnings.filterwarnings('ignore')
+
+# Optional LPIPS metric dependencies
+try:
+    import torch
+    import lpips
+except ImportError:
+    torch = None
+    lpips = None
 
 
 def calculate_psnr(img1, img2):
@@ -204,6 +216,27 @@ def calculate_edge_similarity(img1, img2):
         return 0.0
 
 
+# LPIPS Metric
+
+def calculate_lpips(img1, img2, lpips_fn=None, device='cpu'):
+    """Calculate LPIPS between two images (lower is better). Returns 0.0 if lpips_fn is None."""
+    if lpips_fn is None:
+        return 0.0
+    try:
+        # Ensure 3 channels
+        if len(img1.shape) == 2 or img1.shape[2] == 1:
+            img1 = cv2.cvtColor(img1, cv2.COLOR_GRAY2BGR)
+            img2 = cv2.cvtColor(img2, cv2.COLOR_GRAY2BGR)
+        # Convert to tensor with shape (1,3,H,W) in [-1,1]
+        img1_t = torch.from_numpy(img1).permute(2, 0, 1).unsqueeze(0).float().to(device) / 255.0 * 2 - 1
+        img2_t = torch.from_numpy(img2).permute(2, 0, 1).unsqueeze(0).float().to(device) / 255.0 * 2 - 1
+        with torch.no_grad():
+            dist = lpips_fn(img1_t, img2_t)
+        return dist.item()
+    except Exception as e:
+        print(f"Error calculating LPIPS: {e}")
+        return 0.0
+
 def extract_metrics(reference_path, test_path):
     """Extract comprehensive quality metrics from two videos."""
     print(f"Analyzing: {os.path.basename(test_path)} vs {os.path.basename(reference_path)}")
@@ -239,9 +272,23 @@ def extract_metrics(reference_path, test_path):
         'correlation': [],
         'gms': [],
         'edge_similarity': [],
+        'lpips': [],
         'vmaf': []
     }
     
+    # Initialize LPIPS model once (if available)
+    lpips_fn = None
+    device = 'cpu'
+    if lpips is not None and torch is not None:
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        try:
+            lpips_fn = lpips.LPIPS(net='alex').to(device)
+        except Exception as e:
+            print(f"Error initializing LPIPS: {e}")
+            lpips_fn = None
+    else:
+        print("lpips or torch not installed – skipping LPIPS computation.")
+
     # Process frames
     frame_num = 0
     pbar = tqdm(total=total_frames, desc="Processing frames", unit="frame")
@@ -268,6 +315,9 @@ def extract_metrics(reference_path, test_path):
         metrics['correlation'].append(calculate_correlation(ref_frame, test_frame))
         metrics['gms'].append(calculate_gradient_magnitude_similarity(ref_frame, test_frame))
         metrics['edge_similarity'].append(calculate_edge_similarity(ref_frame, test_frame))
+        # LPIPS (lower is better)
+        if lpips_fn:
+            metrics['lpips'].append(calculate_lpips(ref_frame, test_frame, lpips_fn, device))
         
         frame_num += 1
         pbar.update(1)
@@ -280,6 +330,10 @@ def extract_metrics(reference_path, test_path):
     # Convert to numpy arrays for easier manipulation
     for key in metrics:
         metrics[key] = np.array(metrics[key])
+
+    # If LPIPS not computed, pad with zeros to match frame count
+    if metrics['lpips'].size == 0 and metrics['psnr'].size > 0:
+        metrics['lpips'] = np.zeros_like(metrics['psnr'])
 
     # Compute VMAF once per video using ffmpeg (if available)
     vmaf_scores = calculate_vmaf(reference_path, test_path, width, height)
@@ -306,7 +360,7 @@ def extract_metrics(reference_path, test_path):
     return metrics
 
 
-def plot_metrics(reference_path, test_videos, output_path):
+def plot_metrics(reference_path, test_videos, output_path, all_metrics_flag=False):
     """Generate comprehensive plots comparing multiple test videos against reference."""
     
     # Extract metrics for each test video
@@ -323,16 +377,27 @@ def plot_metrics(reference_path, test_videos, output_path):
         print("Error: No valid metrics extracted from any video")
         return False
     
-    # Create comprehensive plots
-    rows = 4  # accommodates up to 12 metrics (3 per row)
-    fig, axes = plt.subplots(rows, 3, figsize=(18, 16))
+    # Create plots
+    if all_metrics_flag:
+        rows = 4  # accommodates up to 12 metrics (3 per row)
+        fig, axes = plt.subplots(rows, 3, figsize=(18, 16))
+    else:
+        rows = 2  # for 4 default metrics (2 per row)
+        fig, axes = plt.subplots(rows, 2, figsize=(12, 10))
     fig.suptitle(f'Video Quality Metrics Comparison vs {os.path.basename(reference_path)}', fontsize=16, fontweight='bold')
     
     # Color palette for different videos
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
     
     # Define plot configurations
-    plot_configs = [
+    default_metrics = [
+        ('psnr', 'PSNR (dB)', 'Higher is better', True),
+        ('ssim', 'SSIM', 'Higher is better', True),
+        ('lpips', 'LPIPS', 'Lower is better', False),
+        ('vmaf', 'VMAF', 'Higher is better', True)
+    ]
+    
+    all_metric_configs = [
         ('psnr', 'PSNR (dB)', 'Higher is better', True),
         ('ssim', 'SSIM', 'Higher is better', True),
         ('mse', 'MSE', 'Lower is better', False),
@@ -342,8 +407,12 @@ def plot_metrics(reference_path, test_videos, output_path):
         ('correlation', 'Correlation', 'Higher is better', True),
         ('gms', 'Gradient Magnitude Similarity', 'Higher is better', True),
         ('edge_similarity', 'Edge Similarity', 'Higher is better', True),
+        ('lpips', 'LPIPS', 'Lower is better', False),
         ('vmaf', 'VMAF', 'Higher is better', True)
     ]
+    
+    # Select which metrics to plot based on flag
+    plot_configs = all_metric_configs if all_metrics_flag else default_metrics
 
     
     axes_flat = axes.flatten()
@@ -390,7 +459,7 @@ def plot_metrics(reference_path, test_videos, output_path):
     csv_path = output_path.replace('.png', '_detailed_metrics.csv')
     with open(csv_path, 'w') as f:
         # Write header
-        header = "Video,Frame,PSNR,SSIM,MSE,RMSE,MAE,NRMSE,Correlation,GMS,Edge_Similarity,VMAF\n"
+        header = "Video,Frame,PSNR,SSIM,MSE,RMSE,MAE,NRMSE,Correlation,GMS,Edge_Similarity,LPIPS,VMAF\n"
         f.write(header)
         
         # Write data
@@ -398,7 +467,7 @@ def plot_metrics(reference_path, test_videos, output_path):
             num_frames = len(metrics['psnr'])
             for frame in range(num_frames):
                 row = f"{video_name},{frame}"
-                for metric_name in ['psnr', 'ssim', 'mse', 'rmse', 'mae', 'nrmse', 'correlation', 'gms', 'edge_similarity', 'vmaf']:
+                for metric_name in ['psnr', 'ssim', 'mse', 'rmse', 'mae', 'nrmse', 'correlation', 'gms', 'edge_similarity', 'lpips', 'vmaf']:
                     if metric_name in metrics:
                         row += f",{metrics[metric_name][frame]:.6f}"
                     else:
@@ -426,12 +495,13 @@ def plot_metrics(reference_path, test_videos, output_path):
 def main():
     """Main function to parse arguments and generate plots."""
     parser = argparse.ArgumentParser(
-        description="Generate PSNR and SSIM quality plots comparing videos",
+        description="Generate video quality plots comparing videos",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   python video_quality_plots.py reference.mp4 test.mp4 -o comparison.png
   python video_quality_plots.py reference.mp4 1Mbit.mp4 10Mbit.mp4 -o bitrate_comparison.png
+  python video_quality_plots.py reference.mp4 test.mp4 -o comparison.png --all-metrics
         """
     )
     
@@ -439,6 +509,8 @@ Examples:
     parser.add_argument("test_videos", nargs='+', help="Path(s) to test video file(s)")
     parser.add_argument("-o", "--output", required=True, 
                         help="Output plot image file path (PNG)")
+    parser.add_argument("--all-metrics", action="store_true", 
+                        help="Plot all available metrics (default: only PSNR, SSIM, LPIPS, and VMAF)")
     
     args = parser.parse_args()
     
@@ -464,10 +536,11 @@ Examples:
     print(f"Reference: {args.reference_video}")
     print(f"Test videos: {', '.join(args.test_videos)}")
     print(f"Output: {args.output}")
+    print(f"Metrics mode: {'All metrics' if args.all_metrics else 'Default metrics (PSNR, SSIM, LPIPS, VMAF)'}")
     print()
     
     # Generate plots
-    success = plot_metrics(args.reference_video, args.test_videos, args.output)
+    success = plot_metrics(args.reference_video, args.test_videos, args.output, args.all_metrics)
     
     if success:
         print("\nPlot generation completed successfully!")

@@ -364,6 +364,16 @@ ffmpeg -i reference.mp4 -i distorted.mp4 \
   -f null -
 ```
 
+### Manually Generate a Video from PNG Frames
+
+If you want to manually generate a video with 30 fps from PNG frames for evaluation, use the following command:
+
+```bash
+ffmpeg -framerate 30 -i %04d.png -c:v libx264 -pix_fmt yuv420p output.mp4
+```
+
+Make sure to run this command in the correct directory containing your PNG frames, or specify the full path to the frames (e.g., `path/to/frames/%04d.png`). Adjust the frame rate or other parameters if needed for your specific evaluation.
+
 ### Tips
 - The videos must have the same frame count and be synchronized.
 - Use `-an` to ignore audio streams if needed.
@@ -371,5 +381,4 @@ ffmpeg -i reference.mp4 -i distorted.mp4 \
 - For more options, see:
   - [FFmpeg libvmaf filter documentation](https://ffmpeg.org/ffmpeg-filters.html#libvmaf)
   - [Netflix VMAF GitHub](https://github.com/Netflix/vmaf)
-
   - The OpenCV in your Python environment must have GStreamer support (see OpenCV with GStreamer Support section)

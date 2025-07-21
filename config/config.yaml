@@ -44,10 +44,10 @@ encoding:
     name: "H.264" # Default 
     fps: 30  # Frames per second
     resolution:
-        width: 1364 # default 1364
-        height: 768 # default 768
+        width: 1600 # default 1364
+        height: 900 # default 768
     starting_bitrate: 5000
-    bitrate_min: 4000
+    bitrate_min: 1000
     bitrate_max: 10000
 # ---------------------------------------------------------------------------------------#
 # Synchronization Sliding Window
