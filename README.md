@@ -326,6 +326,30 @@ This script will:
 
 The resulting plots will show PSNR, SSIM, LPIPS, and VMAF comparisons across different network conditions (e.g., 4Mbit, 4Mbit_Loss10, 4Mbit_Loss20, 4Mbit_Loss30) with average values displayed in the legend.
 
+### Step 4: Generate Loss0 vs Loss1 Cross-Game Comparison
+
+For specific analysis of Loss0 vs Loss1 scenarios across multiple games, use the dedicated comparison script:
+
+```bash
+python loss0_loss1_comparison.py [--output OUTPUT_PATH]
+```
+
+This specialized script will:
+- Automatically explore the evaluation folder structure
+- Extract metrics for Loss0 and Loss1 scenarios across all games (Forza, Fortnite, Kombat) at 4Mbit bitrate
+- Generate comprehensive plots with 6 lines showing:
+  - 4Mbit_Forza_Loss0 (avg ##)
+  - 4Mbit_Forza_Loss1 (avg ##) 
+  - 4Mbit_Fortnite_Loss0 (avg ##)
+  - 4Mbit_Fortnite_Loss1 (avg ##)
+  - 4Mbit_Kombat_Loss0 (avg ##)
+  - 4Mbit_Kombat_Loss1 (avg ##)
+- Display average values for each metric in the legend
+- Use consistent styling with the original loss comparison plots
+- Save results as `loss0_loss1_comparison.png`
+
+The script generates 2x2 subplot layout showing PSNR, SSIM, LPIPS, and VMAF metrics with color-coded lines for each game (blue for Forza, orange for Fortnite, green for Kombat) and different line styles for Loss0 (solid) vs Loss1 (dashed).
+
 ### Troubleshooting VMAF/FFmpeg Build
 
 - **Missing `nasm` or build tools:**
