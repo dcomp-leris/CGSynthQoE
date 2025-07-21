@@ -278,6 +278,54 @@ This will print VMAF scores to the console.
 
 **Tip:** For more advanced usage and options, refer to the official [FFmpeg VMAF documentation](https://ffmpeg.org/ffmpeg-filters.html#libvmaf).
 
+## Reproducing Video Quality Analysis Results
+
+To reproduce the video quality analysis results from network experiments, follow these steps in order:
+
+### Step 1: Extract Video Frames from Network Captures
+
+Use the RTP video extractor to extract video frames from PCAP files:
+
+```bash
+python rtp_video_extractor.py [options] input.pcap
+```
+
+This will extract the video frames from the network capture and save them for analysis.
+
+### Step 2: Generate Quality Metrics CSV Files
+
+Run the video quality analysis tool to compute detailed metrics and generate CSV files:
+
+```bash
+python video_quality_plots.py [options]
+```
+
+This script will:
+- Compare extracted video frames against reference frames
+- Calculate quality metrics (PSNR, SSIM, LPIPS, VMAF)
+- Generate detailed CSV files with per-frame metrics
+- Create individual quality plots
+
+### Step 3: Generate Comparison Plots
+
+Use the loss comparison plotting tool to create comparative analysis plots:
+
+```bash
+# Interactive mode (recommended)
+python loss_comparison_plots.py --interactive
+
+# Direct command-line usage
+python loss_comparison_plots.py --game Kombat --experiment loss --scenario-group 4Mbit
+```
+
+This script will:
+- Automatically discover available games, experiments, and scenario groups
+- Aggregate metrics from multiple detailed CSV files
+- Generate 2x2 subplot comparisons showing all scenarios for each metric
+- Save plots with descriptive names (e.g., `Kombat_loss_4Mbit_comparison.png`)
+
+The resulting plots will show PSNR, SSIM, LPIPS, and VMAF comparisons across different network conditions (e.g., 4Mbit, 4Mbit_Loss10, 4Mbit_Loss20, 4Mbit_Loss30) with average values displayed in the legend.
+
 ### Troubleshooting VMAF/FFmpeg Build
 
 - **Missing `nasm` or build tools:**
