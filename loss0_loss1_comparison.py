@@ -14,7 +14,8 @@ The script generates plots with 6 lines showing:
 - 4Mbit_Kombat_Loss1 (avg ##)
 
 Usage:
-    python loss0_loss1_comparison.py [--output OUTPUT_PATH]
+    python loss0_loss1_comparison.py [--output OUTPUT_PATH] [--metrics METRIC1 METRIC2 ...]
+    python loss0_loss1_comparison.py --metrics VMAF  # Only VMAF metric
 
 Author: CGSynth Project
 """
@@ -96,7 +97,7 @@ def calculate_averages(metrics_dict):
     return averages
 
 
-def plot_loss_comparison(metrics_dict, averages, output_path=None):
+def plot_loss_comparison(metrics_dict, averages, selected_metrics=None, output_path=None):
     """Generate comparison plots for Loss0 vs Loss1 across games."""
     
     # Define colors for each game
@@ -106,16 +107,54 @@ def plot_loss_comparison(metrics_dict, averages, output_path=None):
         'Kombat': ['#2ca02c', '#98df8a']      # Green shades
     }
     
-    # Create 2x2 subplot layout with same dimensions as original script
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    # Define all available metrics
+    all_metrics = {
+        'PSNR': ('PSNR', '(dB)', 'Higher is better'),
+        'SSIM': ('SSIM', '', 'Higher is better'),
+        'LPIPS': ('LPIPS', '', 'Lower is better'),
+        'VMAF': ('VMAF', '', 'Higher is better')
+    }
+    
+    # Use selected metrics or default to all
+    if selected_metrics is None:
+        selected_metrics = ['PSNR', 'SSIM', 'LPIPS', 'VMAF']
+    
+    # Filter metrics based on selection
+    metrics = []
+    metric_units = []
+    metric_descriptions = []
+    
+    for metric in selected_metrics:
+        if metric in all_metrics:
+            name, unit, desc = all_metrics[metric]
+            metrics.append(name)
+            metric_units.append(unit)
+            metric_descriptions.append(desc)
+    
+    if not metrics:
+        print("Error: No valid metrics selected")
+        return
+    
+    print(f"Plotting metrics: {', '.join(selected_metrics)}")
+    
+    # Create dynamic subplot layout based on number of metrics
+    num_metrics = len(metrics)
+    if num_metrics == 1:
+        fig, axes = plt.subplots(1, 1, figsize=(7, 5))
+        axes = [axes]  # Make it iterable
+    elif num_metrics == 2:
+        fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+        axes = axes.flatten()  # Ensure it's always a flat array
+    elif num_metrics == 3:
+        fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+        axes = axes.flatten()[:3]  # Use only first 3
+    else:  # 4 metrics
+        fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+        axes = axes.flatten()
     fig.suptitle('Loss0 vs Loss1 Quality Metrics Comparison (4Mbit)', fontsize=16, fontweight='bold')
     
-    metrics = ['PSNR', 'SSIM', 'LPIPS', 'VMAF']
-    metric_units = ['(dB)', '', '', '']
-    metric_descriptions = ['Higher is better', 'Higher is better', 'Lower is better', 'Higher is better']
-    
     for idx, metric in enumerate(metrics):
-        ax = axes[idx // 2, idx % 2]
+        ax = axes[idx]
         
         # Set title with description like original script
         ax.set_title(f'{metric} {metric_units[idx]}\n({metric_descriptions[idx]})', fontsize=10, fontweight='bold')
@@ -180,6 +219,8 @@ def main():
     parser = argparse.ArgumentParser(description='Generate Loss0 vs Loss1 quality metrics comparison plots')
     parser.add_argument('--output', '-o', type=str, default=None,
                         help='Output path for the plot (default: loss0_loss1_comparison.png)')
+    parser.add_argument('--metrics', '-m', nargs='+', choices=['PSNR', 'SSIM', 'LPIPS', 'VMAF'], 
+                       help='Metrics to plot (default: all metrics)', default=['PSNR', 'SSIM', 'LPIPS', 'VMAF'])
     
     args = parser.parse_args()
     
@@ -215,7 +256,8 @@ def main():
     averages = calculate_averages(metrics_dict)
     
     # Generate plots
-    plot_loss_comparison(metrics_dict, averages, args.output)
+    print(f"Selected metrics: {', '.join(args.metrics)}")
+    plot_loss_comparison(metrics_dict, averages, args.metrics, args.output)
 
 
 if __name__ == "__main__":

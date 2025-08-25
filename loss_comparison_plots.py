@@ -7,8 +7,9 @@ It supports hierarchical selection of game/experiment/bitrate combinations and a
 discovers available options at each level.
 
 Usage:
-    python loss_comparison_plots.py [--game GAME] [--experiment EXPERIMENT] [--bitrate BITRATE] [--output OUTPUT_PATH]
+    python loss_comparison_plots.py [--game GAME] [--experiment EXPERIMENT] [--bitrate BITRATE] [--output OUTPUT_PATH] [--metrics METRIC1 METRIC2 ...]
     python loss_comparison_plots.py --interactive  # Interactive mode
+    python loss_comparison_plots.py --game Kombat --experiment loss --scenario-group 4Mbit --metrics PSNR SSIM  # Only PSNR and SSIM
 
 Author: CGSynth Project
 """
@@ -83,8 +84,36 @@ def discover_scenario_groups(experiment_dir):
         return []
 
 
+def interactive_metric_selection():
+    """Interactive selection of metrics to plot."""
+    available_metrics = ['PSNR', 'SSIM', 'LPIPS', 'VMAF']
+    
+    print("\nAvailable metrics:")
+    for i, metric in enumerate(available_metrics, 1):
+        print(f"  {i}. {metric}")
+    
+    print("\nSelect metrics to plot (e.g., '1 3 4' for PSNR, LPIPS, VMAF):")
+    while True:
+        try:
+            choice = input("Enter metric numbers separated by spaces (or 'all' for all metrics): ").strip()
+            if choice.lower() == 'all':
+                return available_metrics
+            
+            indices = [int(x) - 1 for x in choice.split()]
+            if all(0 <= idx < len(available_metrics) for idx in indices):
+                selected_metrics = [available_metrics[idx] for idx in indices]
+                if selected_metrics:
+                    return selected_metrics
+                else:
+                    print("Please select at least one metric.")
+            else:
+                print("Invalid selection. Please try again.")
+        except (ValueError, KeyboardInterrupt):
+            print("Invalid input. Please enter numbers separated by spaces.")
+
+
 def interactive_selection(evaluation_dir):
-    """Interactive selection of game, experiment, and bitrate."""
+    """Interactive selection of game, experiment, bitrate, and metrics."""
     # Discover games
     games = discover_games(evaluation_dir)
     if not games:
@@ -153,10 +182,13 @@ def interactive_selection(evaluation_dir):
         except (ValueError, KeyboardInterrupt):
             print("Invalid input. Please enter a number.")
     
-    return selected_game, selected_experiment, selected_scenario_group
+    # Select metrics
+    selected_metrics = interactive_metric_selection()
+    
+    return selected_game, selected_experiment, selected_scenario_group, selected_metrics
 
 
-def plot_metrics_comparison(experiment_dir, game, experiment, scenario_group, output_path=None):
+def plot_metrics_comparison(experiment_dir, game, experiment, scenario_group, selected_metrics=None, output_path=None):
     """Generate plots comparing metrics across different scenarios within a scenario group."""
     # Automatically discover scenario folders within the scenario group directory
     scenarios = []
@@ -185,13 +217,26 @@ def plot_metrics_comparison(experiment_dir, game, experiment, scenario_group, ou
         print(f"Error discovering scenario folders: {e}")
         return False
     
-    # Define the metrics to plot
-    metrics = [
-        ('PSNR', 'PSNR (dB)', 'Higher is better'),
-        ('SSIM', 'SSIM', 'Higher is better'),
-        ('LPIPS', 'LPIPS', 'Lower is better'),
-        ('VMAF', 'VMAF', 'Higher is better')
-    ]
+    # Define all available metrics
+    all_metrics = {
+        'PSNR': ('PSNR', 'PSNR (dB)', 'Higher is better'),
+        'SSIM': ('SSIM', 'SSIM', 'Higher is better'),
+        'LPIPS': ('LPIPS', 'LPIPS', 'Lower is better'),
+        'VMAF': ('VMAF', 'VMAF', 'Higher is better')
+    }
+    
+    # Use selected metrics or default to all
+    if selected_metrics is None:
+        selected_metrics = ['PSNR', 'SSIM', 'LPIPS', 'VMAF']
+    
+    # Filter metrics based on selection
+    metrics = [all_metrics[metric] for metric in selected_metrics if metric in all_metrics]
+    
+    if not metrics:
+        print("Error: No valid metrics selected")
+        return False
+    
+    print(f"Plotting metrics: {', '.join(selected_metrics)}")
     
     # Load metrics from each scenario
     all_metrics = {}
@@ -213,8 +258,20 @@ def plot_metrics_comparison(experiment_dir, game, experiment, scenario_group, ou
         print("Error: No data could be loaded")
         return False
     
-    # Create figure with subplots
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    # Create figure with dynamic subplot layout based on number of metrics
+    num_metrics = len(metrics)
+    if num_metrics == 1:
+        fig, axes = plt.subplots(1, 1, figsize=(7, 5))
+        axes = [axes]  # Make it iterable
+    elif num_metrics == 2:
+        fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+        axes = axes.flatten()  # Ensure it's always a flat array
+    elif num_metrics == 3:
+        fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+        axes = axes.flatten()[:3]  # Use only first 3
+    else:  # 4 metrics
+        fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+        axes = axes.flatten()
     title = f'Video Quality Metrics Comparison: {game} - {experiment} - {scenario_group}'
     fig.suptitle(title, fontsize=16, fontweight='bold')
     
@@ -222,9 +279,8 @@ def plot_metrics_comparison(experiment_dir, game, experiment, scenario_group, ou
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
     
     # Plot each metric
-    axes_flat = axes.flatten()
     for idx, (metric_name, ylabel, description) in enumerate(metrics):
-        ax = axes_flat[idx]
+        ax = axes[idx]
         
         ax.set_title(f'{ylabel}\n({description})', fontsize=10, fontweight='bold')
         ax.set_xlabel('Frame Number')
@@ -290,8 +346,10 @@ def main():
     )
     
     parser.add_argument('--scenario-group', '-s', type=str, help='Scenario group (e.g., 4Mbit, 2Mbit)')
+    parser.add_argument('--metrics', '-m', nargs='+', choices=['PSNR', 'SSIM', 'LPIPS', 'VMAF'], 
+                       help='Metrics to plot (default: all metrics)', default=['PSNR', 'SSIM', 'LPIPS', 'VMAF'])
     parser.add_argument('--output', '-o', type=str, help='Output path for the generated plot image')
-    parser.add_argument('--interactive', '-i', action='store_true', help='Interactive mode for selecting game/experiment/scenario group')
+    parser.add_argument('--interactive', '-i', action='store_true', help='Interactive mode for selecting game/experiment/scenario group/metrics')
     
     args = parser.parse_args()
     
@@ -304,7 +362,7 @@ def main():
     
     # Interactive mode or command line arguments
     if args.interactive:
-        game, experiment, scenario_group = interactive_selection(evaluation_dir)
+        game, experiment, scenario_group, selected_metrics = interactive_selection(evaluation_dir)
         if not all([game, experiment, scenario_group]):
             print("Selection cancelled or invalid.")
             return
@@ -312,6 +370,7 @@ def main():
         game = args.game
         experiment = args.experiment
         scenario_group = getattr(args, 'scenario_group', None)
+        selected_metrics = args.metrics
         
         if not all([game, experiment, scenario_group]):
             print("Error: game, experiment, and scenario-group must be provided when not using interactive mode.")
@@ -326,8 +385,9 @@ def main():
         return
     
     print(f"\nGenerating plots for: {game}/{experiment}/{scenario_group}")
+    print(f"Selected metrics: {', '.join(selected_metrics)}")
     # Generate plots
-    success = plot_metrics_comparison(experiment_dir, game, experiment, scenario_group, args.output)
+    success = plot_metrics_comparison(experiment_dir, game, experiment, scenario_group, selected_metrics, args.output)
     if not success:
         print("Failed to generate plots.")
         return
