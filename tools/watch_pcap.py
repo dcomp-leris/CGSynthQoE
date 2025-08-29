@@ -24,17 +24,15 @@ for pcap_file in pcap_files:
     temp_pcap_file = pcap_file + ".temp.pcap"
     subprocess.run(["editcap", "-F", "libpcap", pcap_file, temp_pcap_file], check=True)
 
-    # Set ownership and permissions
-    subprocess.run(["sudo", "chown", f"{current_user}:{current_user}", temp_pcap_file], check=True)
-    subprocess.run(["sudo", "chmod", "777", temp_pcap_file], check=True)
+    # Set reasonable permissions (owner read/write only)
+    os.chmod(temp_pcap_file, 0o644)
 
     # Prepare output MP4 path
     output_file = pcap_file.replace(".pcap", ".mp4")
 
-    # Ensure output directory is writable
+    # Ensure output directory exists with proper permissions
     output_dir = os.path.dirname(output_file)
     os.makedirs(output_dir, exist_ok=True)
-    os.chmod(output_dir, 0o777)
 
     print(f"Processing {pcap_file} -> {output_file} ...")
 

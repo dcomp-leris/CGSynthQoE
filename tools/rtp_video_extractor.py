@@ -4,8 +4,6 @@ import os
 import subprocess
 import tempfile
 import argparse
-from collections import defaultdict
-
 
 class RTPVideoExtractor:
     def __init__(self, input_pcap, output_file=None, codec="h264"):
