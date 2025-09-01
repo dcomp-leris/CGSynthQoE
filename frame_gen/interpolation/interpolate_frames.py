@@ -430,8 +430,26 @@ def main():
     
     # Set up paths
     frame_gen_dir = Path(__file__).parent  # Use the interpolation directory as base
-    original_folder = frame_gen_dir.parent / 'rescaling' / f'downscaled_original_frames_from_1920_1080_to_{args.res.replace("x", "_")}'
-    processed_folder = frame_gen_dir / f'processed_frames_{args.method}_{args.res.replace("x", "_")}'
+    
+    # Use the reference video frames from output_frames directory
+    reference_folder = frame_gen_dir.parent.parent / 'output_frames' / f'reference_video_{args.game}_{args.res}_frames'
+    
+    if reference_folder.exists():
+        original_folder = reference_folder
+    else:
+        # Fallback to rescaled folder if reference doesn't exist
+        rescaled_folder = frame_gen_dir.parent / 'rescaling' / f'downscaled_original_frames_from_1920_1080_to_{args.res.replace("x", "_")}'
+        if rescaled_folder.exists():
+            original_folder = rescaled_folder
+        else:
+            # Final fallback to server frames
+            server_folder = frame_gen_dir.parent.parent / 'server' / args.game
+            if server_folder.exists():
+                original_folder = server_folder
+            else:
+                raise FileNotFoundError(f"No frames found in reference folder {reference_folder}, rescaled folder {rescaled_folder}, or server folder {server_folder}")
+
+    processed_folder = frame_gen_dir / f'processed_frames_{args.method}_{args.res.replace("x", "_")}_{args.game}'
     
     print(f"Original folder: {original_folder}")
     print(f"Processed folder: {processed_folder}")
