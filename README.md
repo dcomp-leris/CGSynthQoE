@@ -1,4 +1,12 @@
-# CGSynth
+# DEMO: CGSynth: Cloud Gaming Synthesizer
+
+
+This work is accepted in Sigcomm 2025 and will be presented in the confrerence!
+
+It is under construction! 
+
+<img width="1210" height="714" alt="image" src="https://github.com/user-attachments/assets/ddfacb9e-21da-4580-bfc7-fdb38a553b66" />
+
 
 ## Setup
 
