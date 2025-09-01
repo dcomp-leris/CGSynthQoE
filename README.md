@@ -1,6 +1,6 @@
 # DEMO: CGSynth: Cloud Gaming Synthesizer
 
-**Note:** This paper was presented on 2025/06/25 in the IEEE Netsoft 2025 conference.
+**Note:** This paper will be presented on 2025/09/25 in the Sigcomm'25 conference.
 
 <!--[![Conference](https://img.shields.io/badge/submitted-Netsoft2025-blue)](https://netsoft2025.ieee-netsoft.org/)-->
 [![Conference](https://img.shields.io/badge/accepted-Sigcomm'25-blue)](https://conferences.sigcomm.org/sigcomm/2025/accepted-posters-demos/)
