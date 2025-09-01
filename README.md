@@ -4,8 +4,8 @@
 
 <!--[![Conference](https://img.shields.io/badge/submitted-Netsoft2025-blue)](https://netsoft2025.ieee-netsoft.org/)-->
 [![Conference](https://img.shields.io/badge/accepted-Sigcomm'25-blue)](https://conferences.sigcomm.org/sigcomm/2025/accepted-posters-demos/)
-[![Paper](https://img.shields.io/badge/Paper-2025/05/21-green)](CGReplay_Demo.pdf)
-[![Paper](https://img.shields.io/badge/Presentation-2025/06/21-red)](https://docs.google.com/presentation/d/1Kf5hDO_R_EbwMqTEkOlxQvo_gMdOgFPpOrphWt-vvn8/edit?usp=sharing)
+[![CGReplay](https://img.shields.io/badge/CGReplay-Repository-green)](https://github.com/dcomp-leris/CGReplay.git)
+[![Paper](https://img.shields.io/badge/Paper-Zenodo-red)](https://zenodo.org/records/16968173)
 
 
 This work is accepted in Sigcomm 2025 and will be presented in the confrerence!
