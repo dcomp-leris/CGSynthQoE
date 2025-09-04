@@ -12,12 +12,56 @@ This work is accepted in Sigcomm 2025 and will be presented in the confrerence!
 
 **Note: It is under construction!**
 
+*For more details, please refer to the Wiki page of this repository.*
+
 
 Cloud gaming's unique network traffic is challenging to reproduce for research. This demo introduces Cloud Gaming Synthesizer (CGSynth), a platform that generates realistic, configurable synthetic cloud gaming (CG) traffic. CGSynth captures real CG patterns and allows their synthetic reproduction with user-defined flow/packet parameters and deterministic protocol headers. It employs a GRU for accurate, order-preserving timestamp generation and AI-based video interpolation for realistic payloads. Crucially, CGSynth integrates a QoE evaluation module using objective (e.g., SSIM) and subjective metrics (e.g., MOS) to validate synthetic traffic's video quality and responsiveness against real streams.
 
 
 <img width="1210" height="714" alt="image" src="https://github.com/user-attachments/assets/ddfacb9e-21da-4580-bfc7-fdb38a553b66" />
 
+## Quickstart: End-to-End Workflow
+
+Follow these steps to go from PNG frames to PCAP, back to an MP4, extract frames, optionally interpolate (RIFE), and re-create a video.
+
+1) Generate an RTP PCAP from PNG frames
+
+```bash
+# From repository root
+python tools/rtp_video_packetizer.py
+# Configure input frame directory, codec, IPs/ports, and output PCAP inside the script
+```
+
+2) Extract a playable MP4 from the RTP PCAP
+
+```bash
+python tools/rtp_pcap_to_video_extractor.py --input output_pcap.pcap --output output_video.mp4 --codec h264
+```
+
+3) Extract frames from the MP4
+
+```bash
+python tools/rtp_frame_extractor.py --video output_video.mp4 --out-dir output_frames/Example --fps 30
+```
+
+4) (Optional) Interpolate frames (RIFE or simple blending)
+
+```bash
+# See detailed options below and in frame_gen/interpolation/README.md
+python frame_gen/interpolation/interpolate_frames.py \
+  --method rife \
+  --game Example \
+  --resolution 1600x900 \
+  --exp 1 \
+  --generate-video yes \
+  --fps 30
+```
+
+5) Create a video from any folder of frames
+
+```bash
+python tools/create_video_from_frames.py --frames-dir output_frames/Example --output output_videos/Example.mp4 --fps 30
+```
 
 ## Setup
 
@@ -29,6 +73,12 @@ git submodule update --init
 ```
 
 ### Python Environment Setup
+
+- Frame generation and tooling: Python 3.8 recommended
+- Player/CGReplay components (with GStreamer OpenCV): see OpenCV section below
+- Quality metrics tools: Python 3.12.2 (see Quality Metrics Tools section)
+
+> Tip: Use per-component virtual environments to avoid dependency conflicts.
 
 #### For Frame Generation Component
 The frame generation component requires Python 3.8. You can install it using the deadsnakes PPA:
@@ -101,8 +151,8 @@ A pair of Python scripts for working with video streams over RTP networks. These
 
 #### Overview
 
-- **rtp_video_packetizer.py**: Converts a series of PNG images into an H.264/H.265 video stream, creates RTP packets for network transmission, and stores them in a PCAP file.
-- **rtp_video_extractor.py**: Extracts H.264/H.265 video from RTP packets in a PCAP file and reconstructs the original video stream.
+- **tools/rtp_video_packetizer.py**: Converts a series of PNG images into an H.264/H.265 video stream, creates RTP packets for network transmission, and stores them in a PCAP file.
+- **tools/rtp_pcap_to_video_extractor.py**: Extracts H.264/H.265 video from RTP packets in a PCAP file and reconstructs the original video stream.
 
 #### Requirements
 
@@ -120,7 +170,7 @@ pip install scapy
 ##### Creating RTP Video Packets (PCAP)
 
 ```bash
-python rtp_video_packetizer.py
+python tools/rtp_video_packetizer.py
 ```
 
 This script will:
@@ -138,32 +188,83 @@ Configuration options are defined within the script, including:
 ##### Extracting Video from PCAP
 
 ```bash
-python rtp_video_extractor.py input_pcap.pcap [-o output_video.mp4] [-c codec]
+python tools/rtp_pcap_to_video_extractor.py --input input_pcap.pcap --output output.mp4 --codec h264
 ```
 
 Arguments:
-- `input_pcap.pcap`: Path to the input PCAP file (default: 'rtp_stream_h264.pcap')
-- `-o, --output`: Path to the output video file (default: 'output.mp4')
-- `-c, --codec`: Video codec ('h264' or 'h265', default: 'h264')
+- `--input`: Path to the input PCAP file
+- `--output`: Path to the output video file (default: 'output.mp4')
+- `--codec`: Video codec ('h264' or 'h265', default: 'h264')
 
 Example:
 ```bash
-python rtp_video_extractor.py rtp_stream_h264_fixed.pcap -o extracted_video.mp4 -c h264
+python tools/rtp_pcap_to_video_extractor.py --input rtp_stream_h264_fixed.pcap --output extracted_video.mp4 --codec h264
 ```
 
-### 2. Frame Generation and Degradation Toolkit
+### 2. Frame Extraction and Video Creation
+
+- `tools/rtp_frame_extractor.py`: Extract frames from an MP4 video at a specified FPS (default 30). Optionally skip corrupted frames. Saves as zero-padded JPEG files (`frame_000001.jpg`, ...).
+
+Usage:
+```bash
+python tools/rtp_frame_extractor.py --video path/to/video.mp4 --out-dir output_frames/MyVideo --fps 30 --skip-corrupted yes
+```
+
+- `tools/create_video_from_frames.py`: Convert a folder of image frames into an MP4 video using FFmpeg. Automatically detects frame patterns.
+
+Usage:
+```bash
+python tools/create_video_from_frames.py --frames-dir output_frames/MyVideo --output output_videos/MyVideo.mp4 --fps 30
+```
+
+### 3. Frame Generation and Degradation Toolkit
 
 Located in the `frame_gen` directory, this toolkit provides tools for generating and degrading video frames, as well as evaluating their quality. It includes:
 
-#### Frame Generation
-- Frame interpolation and upscaling capabilities
-- Support for various video processing algorithms
-- Integration with RIFE (Real-time Intermediate Flow Estimation) for high-quality frame interpolation
+#### Frame Generation (Interpolation)
+- Methods: simple OpenCV blending and AI-based RIFE interpolation
+- Main script: `frame_gen/interpolation/interpolate_frames.py`
+- RIFE setup and Docker-based instructions: see `frame_gen/interpolation/README.md`
+
+Common usage:
+```bash
+# Simple blending
+python frame_gen/interpolation/interpolate_frames.py \
+  --method blend --game Kombat --resolution 1600x900 --exp 1 --fps 30 --generate-video yes
+
+# RIFE interpolation (ensure RIFE environment/server as per README)
+python frame_gen/interpolation/interpolate_frames.py \
+  --method rife --game Kombat --resolution 1600x900 --exp 1 --fps 30 --generate-video yes
+```
+
+Key arguments:
+- `--method`: `blend` or `rife`
+- `--game`: Used to auto-locate input frame folders for known datasets
+- `--resolution`: e.g., `1600x900`
+- `--exp`: Interpolation exponent (number of subdivisions)
+- `--fps`: Original FPS for output video generation
+- `--generate-video`: `yes`/`no` to render MP4 after interpolation
 
 #### Frame Degradation
-- Tools for simulating network conditions
-- Frame dropping and quality reduction utilities
-- Customizable degradation parameters
+- Script: `frame_gen/degradation/frame_degradation_simulator.py`
+- Simulates artifacts: compression, macroblock loss, resolution scaling, frame freeze, motion blur, color banding, quantization noise.
+
+Usage:
+```bash
+python frame_gen/degradation/frame_degradation_simulator.py \
+  --input_dir path/to/input_frames \
+  --output_dir path/to/output_frames_degraded \
+  --severity 0.5 \
+  --seed 123 \
+  --effect_types all \
+  --generate_video yes \
+  --fps 30 \
+  --codec libx264
+```
+
+Important notes:
+- `--effect_types` accepts one or more of: `network`, `rendering`, `all`.
+- Output frames are saved as `%04d.png` and can be turned into a video automatically if `--generate_video yes`.
 
 #### Quality Assessment
 - Comprehensive set of quality metrics tools (see Quality Metrics Tools section)
@@ -172,7 +273,7 @@ Located in the `frame_gen` directory, this toolkit provides tools for generating
 
 For detailed usage instructions, please refer to the documentation in the `frame_gen` directory.
 
-### 3. Quality Metrics Tools
+### 4. Quality Metrics Tools
 
 Located in the `frame_gen/tools` directory, these tools help evaluate and analyze video quality metrics, particularly useful for comparing original and processed/interpolated video frames.
 
@@ -217,7 +318,7 @@ For detailed usage instructions of each quality metrics tool, please refer to th
 
 ## Notes
 
-- All tools require Python 3.12.2 or higher
+- Use Python 3.8 for frame generation and general tooling; use Python 3.12.2 for quality metrics tools
 - Some tools (like LPIPS) require CUDA-capable GPU for optimal performance
 - Make sure your input videos/frames have matching dimensions when comparing them
 - The tools are designed to work with common video formats (MP4) and image formats (PNG)
@@ -306,7 +407,7 @@ To reproduce the video quality analysis results from network experiments, follow
 Use the RTP video extractor to extract video frames from PCAP files:
 
 ```bash
-python rtp_video_extractor.py [options] input.pcap
+python tools/rtp_pcap_to_video_extractor.py --input input.pcap --output output.mp4 --codec h264
 ```
 
 This will extract the video frames from the network capture and save them for analysis.
