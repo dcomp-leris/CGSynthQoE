@@ -8,9 +8,6 @@
 [![Paper](https://img.shields.io/badge/Paper-Zenodo-red)](https://zenodo.org/records/16968173)
 
 
-This work is accepted in Sigcomm 2025 and will be presented in the confrerence!
-
-**Note: It is under construction!**
 
 *For more details, please refer to the Wiki page of this repository.*
 
