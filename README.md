@@ -25,8 +25,9 @@ Follow these steps to go from PNG frames to PCAP, back to an MP4, extract frames
 
 ```bash
 # From repository root
-python tools/rtp_video_packetizer.py
-# Configure input frame directory, codec, IPs/ports, and output PCAP inside the script
+python tools/rtp_video_packetizer.py --game [Forza Fortnite Kombat]
+# Configure input frame directory, codec, IPs/ports, and output PCAP inside the config.yaml
+
 ```
 
 2) Extract a playable MP4 from the RTP PCAP
