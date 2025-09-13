@@ -8,6 +8,7 @@
 [![Paper](https://img.shields.io/badge/Paper-Zenodo-red)](https://zenodo.org/records/16968173)
 
 
+[![Demonstration](https://img.shields.io/badge/Sigcomm2025-Demonstration-grey)](https://conferences.sigcomm.org/sigcomm/2025/papers-posters-demos-info/)
 
 *For more details, please refer to the Wiki page of this repository.*
 
