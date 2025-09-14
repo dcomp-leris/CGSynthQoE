@@ -6,10 +6,7 @@
 [![Conference](https://img.shields.io/badge/accepted-Sigcomm'25-blue)](https://conferences.sigcomm.org/sigcomm/2025/accepted-posters-demos/)
 [![CGReplay](https://img.shields.io/badge/CGReplay-Repository-green)](https://github.com/dcomp-leris/CGReplay.git)
 [![Paper](https://img.shields.io/badge/Paper-Zenodo-red)](https://zenodo.org/records/16968173)
-
-
 [![Demonstration](https://img.shields.io/badge/Sigcomm2025-Demonstration-blue)](https://conferences.sigcomm.org/sigcomm/2025/papers-posters-demos-info/)
-
 [![ACM](https://img.shields.io/badge/Paper-ACM-red)](
 https://dl.acm.org/doi/10.1145/3744969.3748445)
 
