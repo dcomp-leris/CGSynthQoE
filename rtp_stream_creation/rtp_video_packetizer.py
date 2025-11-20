@@ -503,8 +503,8 @@ def main():
                        help="Maximum RTP payload size (default: 1200)")
     parser.add_argument("--fps", type=int, default=30,
                        help="Target frames per second (default: 30)")
-    parser.add_argument("--bitrate", default="5M",
-                       help="Target bitrate for encoding (default: 5M)")
+    parser.add_argument("--bitrate", default="5000k",
+                       help="Target bitrate for encoding (default: 5Mbps)")
     
     args = parser.parse_args()
     
