@@ -164,7 +164,7 @@ def packetize_nalu(nalu, seq, rtp_timestamp, ssrc, marker, max_payload_size, ipi
 def encode_images_to_video(img_dir, codec=DEFAULT_CODEC, fps=30, target_bitrate="5M"):
     """
     Encodes a sequence of PNG images into a video file, then extracts NAL units.
-    This creates a proper video stream with P-frames and B-frames, not just I-frames.
+    FIXED: Uses image2 demuxer with framerate to ensure all frames are encoded.
     """
     assert codec in ["h264", "h265"], "Codec must be 'h264' or 'h265'"
     suffix = "h264" if codec == "h264" else "hevc"
@@ -187,155 +187,205 @@ def encode_images_to_video(img_dir, codec=DEFAULT_CODEC, fps=30, target_bitrate=
         if not image_files:
             raise RuntimeError(f"No PNG files found in {img_dir}")
 
-        # Create a temporary file listing all images
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as f:
-            filelist_path = f.name
-            for img in image_files:
-                f.write(f"file '{img.absolute()}'\n")
-                f.write(f"duration {1/fps}\n")
+        print(f"Found {len(image_files)} PNG files to encode")
 
-        try:
-            # Build ffmpeg command for video encoding with realistic cloud gaming settings
+        # FIXED: Use image2 demuxer with pattern matching instead of concat
+        # This is much more reliable for image sequences
+        
+        # Determine the file pattern
+        first_file = image_files[0].name
+        
+        # Check if files are numbered (e.g., 0001.png, 0002.png, etc.)
+        import re
+        match = re.match(r'^(\D*)(\d+)(\.\w+)$', first_file)
+        
+        if match:
+            prefix, number, extension = match.groups()
+            num_digits = len(number)
+            pattern = f"{prefix}%0{num_digits}d{extension}"
+            input_path = str(img_dir / pattern)
+            
+            # Use image2 demuxer with framerate
             cmd = [
                 "ffmpeg", "-y", "-loglevel", "error",
-                "-f", "concat",
-                "-safe", "0",
-                "-i", filelist_path,
+                "-framerate", str(fps),  # Input framerate
+                "-i", input_path,
+                "-frames:v", str(len(image_files)),  # CRITICAL: Specify exact frame count
                 "-pix_fmt", "yuv420p",
                 "-c:v", "libx264" if codec == "h264" else "libx265",
-                "-profile:v", "main",          # Use main profile (more common in CG)
-                "-level", "4.1",               # Higher level for better quality
-                "-preset", "veryfast",         # Fast encoding like real-time CG
-                "-tune", "zerolatency",        # Optimize for low latency
-                "-b:v", target_bitrate,        # Target bitrate (realistic for CG)
-                "-maxrate", target_bitrate,    # Max bitrate
-                "-bufsize", "2M",              # Buffer size for rate control
-                "-g", "60",                    # GOP size of 60 frames (2 seconds at 30fps)
-                "-keyint_min", "60",           # Minimum GOP size
-                "-sc_threshold", "40",         # Scene change detection threshold
-                "-bf", "0",                    # No B-frames for lower latency
-                "-refs", "1",                  # Single reference frame
+                "-profile:v", "main",
+                "-level", "4.1",
+                "-preset", "veryfast",
+                "-tune", "zerolatency",
+                "-b:v", target_bitrate,
+                "-maxrate", target_bitrate,
+                "-bufsize", "2M",
+                "-g", "60",
+                "-keyint_min", "60",
+                "-sc_threshold", "40",
+                "-bf", "0",
+                "-refs", "1",
+                "-x264opts" if codec == "h264" else "-x265-params", 
+                "aud=1",
                 "-bsf:v", "h264_mp4toannexb" if codec == "h264" else "hevc_mp4toannexb",
                 "-f", "rawvideo", encoded_path
             ]
-
-            print(f"Encoding {len(image_files)} frames as video stream...")
-            subprocess.run(cmd, check=True)
-
-            with open(encoded_path, "rb") as f:
-                data = f.read()
-
-            if not data:
-                raise RuntimeError(f"No data generated from encoding")
-
-            print(f"Encoded video size: {len(data)} bytes")
-
-            # Extract NAL units from the video stream
-            nalus = []
-            i = 0
-            start_codes = [b'\x00\x00\x00\x01', b'\x00\x00\x01']
-
-            while i < len(data):
-                # Find start code
-                start_code_pos = -1
-                start_code_len = 0
+        else:
+            # Fallback: Create numbered symlinks if files don't follow pattern
+            temp_dir = tempfile.mkdtemp()
+            try:
+                for idx, img_file in enumerate(image_files):
+                    link_path = Path(temp_dir) / f"frame_{idx:04d}.png"
+                    link_path.symlink_to(img_file.absolute())
                 
-                for code in start_codes:
-                    pos = data.find(code, i)
-                    if pos != -1 and (start_code_pos == -1 or pos < start_code_pos):
-                        start_code_pos = pos
-                        start_code_len = len(code)
-                
-                if start_code_pos == -1:
-                    break
-                    
-                # Find the start of the next NAL unit
-                next_start_pos = len(data)
-                for code in start_codes:
-                    pos = data.find(code, start_code_pos + start_code_len)
-                    if pos != -1 and pos < next_start_pos:
-                        next_start_pos = pos
-                
-                # Extract the NAL unit without the start code
-                nal_start = start_code_pos + start_code_len
-                nal_end = next_start_pos
-                nal_unit = data[nal_start:nal_end]
-                
-                if nal_unit:  # Only add if not empty
-                    nalus.append(nal_unit)
-                
-                i = start_code_pos + start_code_len
-                if i >= next_start_pos:
-                    i = next_start_pos
-            
-            # Group NAL units by frame
-            frames_nalus = []
-            current_frame = []
-            sps_pps_nalus = []
-            
-            for idx, nalu in enumerate(nalus):
-                if not nalu:
-                    continue
-                    
-                if codec == "h264":
-                    nal_type = nalu[0] & 0x1F
-                    print(f"NAL {idx}: type={nal_type}, size={len(nalu)} bytes")
-                    
-                    # Collect SPS/PPS separately (only sent once)
-                    if nal_type == 7 or nal_type == 8:  # SPS or PPS
-                        if nalu not in sps_pps_nalus:
-                            sps_pps_nalus.append(nalu)
-                        continue
-                    
-                    # Check if this is a slice (frame data)
-                    if nal_type in [1, 5]:  # Non-IDR slice or IDR slice
-                        current_frame.append(nalu)
-                        # If it's an IDR (keyframe), it marks end of previous frame
-                        if nal_type == 5 and len(current_frame) == 1:
-                            if frames_nalus and frames_nalus[-1]:  # Close previous frame
-                                pass
-                    
-                    # AUD (Access Unit Delimiter) or SEI can indicate frame boundary
-                    if nal_type == 9 and current_frame:  # AUD
-                        frames_nalus.append(current_frame)
-                        current_frame = []
-                else:  # h265
-                    nal_type = (nalu[0] >> 1) & 0x3F
-                    print(f"NAL {idx}: type={nal_type}, size={len(nalu)} bytes")
-                    
-                    if nal_type in [33, 34, 35]:  # SPS, PPS, VPS
-                        if nalu not in sps_pps_nalus:
-                            sps_pps_nalus.append(nalu)
-                        continue
-                    
-                    if nal_type <= 31:  # Slice
-                        current_frame.append(nalu)
-                    
-                    if nal_type == 35 and current_frame:  # AUD
-                        frames_nalus.append(current_frame)
-                        current_frame = []
-            
-            # Add the last frame if any
-            if current_frame:
-                frames_nalus.append(current_frame)
-            
-            print(f"Extracted {len(frames_nalus)} frames with {len(sps_pps_nalus)} parameter sets")
-            
-            return sps_pps_nalus, frames_nalus
+                cmd = [
+                    "ffmpeg", "-y", "-loglevel", "error",
+                    "-framerate", str(fps),
+                    "-i", str(Path(temp_dir) / "frame_%04d.png"),
+                    "-frames:v", str(len(image_files)),
+                    "-pix_fmt", "yuv420p",
+                    "-c:v", "libx264" if codec == "h264" else "libx265",
+                    "-profile:v", "main",
+                    "-level", "4.1",
+                    "-preset", "veryfast",
+                    "-tune", "zerolatency",
+                    "-b:v", target_bitrate,
+                    "-maxrate", target_bitrate,
+                    "-bufsize", "2M",
+                    "-g", "60",
+                    "-keyint_min", "60",
+                    "-sc_threshold", "40",
+                    "-bf", "0",
+                    "-refs", "1",
+                    "-x264opts" if codec == "h264" else "-x265-params",
+                    "aud=1",
+                    "-bsf:v", "h264_mp4toannexb" if codec == "h264" else "hevc_mp4toannexb",
+                    "-f", "rawvideo", encoded_path
+                ]
+            except Exception as e:
+                import shutil
+                shutil.rmtree(temp_dir, ignore_errors=True)
+                raise
+
+        print(f"Encoding {len(image_files)} frames as video stream...")
+        result = subprocess.run(cmd, capture_output=True, text=True)
         
-        finally:
-            # Clean up filelist
-            if os.path.exists(filelist_path):
-                os.remove(filelist_path)
+        if result.returncode != 0:
+            print(f"FFmpeg stderr: {result.stderr}")
+            raise subprocess.CalledProcessError(result.returncode, cmd)
+
+        with open(encoded_path, "rb") as f:
+            data = f.read()
+
+        if not data:
+            raise RuntimeError(f"No data generated from encoding")
+
+        print(f"Encoded video size: {len(data)} bytes")
+
+        # Extract NAL units from the video stream
+        nalus = []
+        i = 0
+        start_codes = [b'\x00\x00\x00\x01', b'\x00\x00\x01']
+
+        while i < len(data):
+            start_code_pos = -1
+            start_code_len = 0
+            
+            for code in start_codes:
+                pos = data.find(code, i)
+                if pos != -1 and (start_code_pos == -1 or pos < start_code_pos):
+                    start_code_pos = pos
+                    start_code_len = len(code)
+            
+            if start_code_pos == -1:
+                break
+                
+            next_start_pos = len(data)
+            for code in start_codes:
+                pos = data.find(code, start_code_pos + start_code_len)
+                if pos != -1 and pos < next_start_pos:
+                    next_start_pos = pos
+            
+            nal_start = start_code_pos + start_code_len
+            nal_end = next_start_pos
+            nal_unit = data[nal_start:nal_end]
+            
+            if nal_unit:
+                nalus.append(nal_unit)
+            
+            i = start_code_pos + start_code_len
+            if i >= next_start_pos:
+                i = next_start_pos
+        
+        # Group NAL units by frame
+        frames_nalus = []
+        current_frame = []
+        sps_pps_nalus = []
+        
+        for idx, nalu in enumerate(nalus):
+            if not nalu:
+                continue
+                
+            if codec == "h264":
+                nal_type = nalu[0] & 0x1F
+                print(f"NAL {idx}: type={nal_type}, size={len(nalu)} bytes")
+                
+                # Collect SPS/PPS separately
+                if nal_type in [7, 8]:  # SPS or PPS
+                    if nalu not in sps_pps_nalus:
+                        sps_pps_nalus.append(nalu)
+                    continue
+                
+                # AUD marks frame boundaries
+                if nal_type == 9:  # AUD
+                    if current_frame:
+                        frames_nalus.append(current_frame)
+                        current_frame = []
+                    continue
+                
+                # Slices and SEI
+                if nal_type in [1, 5, 6]:
+                    current_frame.append(nalu)
+                
+            else:  # h265
+                nal_type = (nalu[0] >> 1) & 0x3F
+                print(f"NAL {idx}: type={nal_type}, size={len(nalu)} bytes")
+                
+                if nal_type in [32, 33, 34]:  # VPS, SPS, PPS
+                    if nalu not in sps_pps_nalus:
+                        sps_pps_nalus.append(nalu)
+                    continue
+                
+                if nal_type == 35:  # AUD
+                    if current_frame:
+                        frames_nalus.append(current_frame)
+                        current_frame = []
+                    continue
+                
+                if nal_type <= 31:  # Slice
+                    current_frame.append(nalu)
+        
+        # Add the last frame
+        if current_frame:
+            frames_nalus.append(current_frame)
+        
+        print(f"Extracted {len(frames_nalus)} frames with {len(sps_pps_nalus)} parameter sets")
+        print(f"Expected {len(image_files)} frames")
+        
+        # Verify frame count
+        if len(frames_nalus) != len(image_files):
+            print(f"WARNING: Frame count mismatch! Expected {len(image_files)}, got {len(frames_nalus)}")
+            print(f"This may indicate an issue with the encoding process.")
+        
+        return sps_pps_nalus, frames_nalus
     
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"FFmpeg encoding failed: {e}")
     except Exception as e:
         raise RuntimeError(f"Error encoding video: {e}")
     finally:
-        # Clean up temporary file
         if os.path.exists(encoded_path):
-            os.remove(encoded_path)
+            os.remove(encoded_path)           
 
 
 def create_rtp_packets(codec=DEFAULT_CODEC, 
