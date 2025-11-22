@@ -212,6 +212,10 @@ def extract_rtp_payload(pcap_file, payload_type=96, output_file=None):
             raise RuntimeError(f"FFmpeg conversion failed with return code {result.returncode}")
         
         print(f"Successfully extracted video to: {output_path}")
+
+        # NEW: extract PNG frames
+        extract_frames_from_video(output_path)
+
         return output_path
         
     except FileNotFoundError:
@@ -255,6 +259,33 @@ def detect_codec(nal_units):
     # Default to H.264 if unable to detect
     print("Warning: Could not definitively detect codec, assuming H.264")
     return "h264"
+
+def extract_frames_from_video(video_path, output_dir="result_frames"):
+    """
+    Use ffmpeg to extract raw frames as PNG files.
+    
+    Args:
+        video_path: Path to the decoded video file (MP4 or other)
+        output_dir: Directory name for PNG frame output
+    """
+    out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"Extracting frames from {video_path} into {output_dir}/ ...")
+
+    cmd = [
+        "ffmpeg", "-y",
+        "-i", str(video_path),
+        str(out_dir / "frame_%06d.png")
+    ]
+
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    if result.returncode != 0:
+        print(f"FFmpeg error while extracting frames: {result.stderr}")
+        raise RuntimeError("Frame extraction failed.")
+
+    print(f"✓ Extracted PNG frames to: {out_dir}")
 
 
 def main():
