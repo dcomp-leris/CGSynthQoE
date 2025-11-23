@@ -8,7 +8,7 @@ ports=("5000" "5001"  "5002" "5003" "5004" "5005" "5006" "5007" "5008" "5009" "5
 #yaml_file="./config/config.yaml"
 
 # Extract UDP ports from the YAML file
-#ports=($(yq eval '.server_port, .server_command, .player_streaming_port, .palyer_command_port' "$yaml_file"))  # Extract multiple values
+#ports=($(yq eval '.server_port, .server_command, .player_streaming_port, .player_command_port' "$yaml_file"))  # Extract multiple values
 
 
 

@@ -81,7 +81,7 @@ def compare_images(ref_folder, tgt_folder, start_num, end_num, csv_path, qr_size
 # Example usage:
 compare_images(
     "/home/alireza/mycg/CGReplay/server/Kombat",
-    "/home/alireza/mycg/CGReplay/player/logs/received_frames",
+    "/home/alireza/mycg/CGReplay/player/received_frames",
     2, 101,
     "/home/alireza/mycg/CGReplay/tools/VQ/videoQ.csv"
 )

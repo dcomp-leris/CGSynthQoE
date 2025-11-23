@@ -64,25 +64,28 @@ def run_delete_pcap():
     print("Removed PCAP Files ***")
 ''' 
 
-'''
-def remove_log_files():
-    # Remove all files in received_frames
-    subprocess.run(["rm", "-f", "/home/alireza/mycg/CGReplay/player/logs/received_frames/*.*"], check=True)
-
-    # Remove specific log files
-    subprocess.run(["rm", "-f", "/home/alireza/mycg/CGReplay/player/logs/my.pcap"], check=True)
-    subprocess.run(["rm", "-f", "/home/alireza/mycg/CGReplay/player/logs/ratelog_CG.txt"], check=True)
-    subprocess.run(["rm", "-f", "/home/alireza/mycg/CGReplay/player/logs/timelog_CG.txt"], check=True)
-'''
 def remove_log_files(result_queue=None):
     try:
-        subprocess.run("rm -f /home/alireza/mycg/CGReplay/player/logs/received_frames/*", shell=True, check=True)
+        # Load config to get received_frames path
+        with open("../config/config.yaml", "r") as file:
+            config = yaml.safe_load(file)
+        
+        received_frames = config["gamer"]["received_frames"]
+        
+        # Ensure received_frames directory exists and clean it
+        if not os.path.exists(received_frames):
+            os.makedirs(received_frames)
+        elif os.path.exists(received_frames):
+            subprocess.run(f"rm -f {received_frames}/*", shell=True, check=True)
+        
+        # Remove specific log files
         subprocess.run(["rm", "-f", "/home/alireza/mycg/CGReplay/player/logs/my.pcap"], check=True)
         subprocess.run(["rm", "-f", "/home/alireza/mycg/CGReplay/player/logs/ratelog_CG.txt"], check=True)
         subprocess.run(["rm", "-f", "/home/alireza/mycg/CGReplay/player/logs/timelog_CG.txt"], check=True)
+        
         if result_queue:
             result_queue.put("Log files removed successfully.")
-    except subprocess.CalledProcessError as e:
+    except Exception as e:
         if result_queue:
             result_queue.put(f"Error removing log files: {e}")
 

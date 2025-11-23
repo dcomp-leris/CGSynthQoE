@@ -32,7 +32,7 @@ cg_server_port = config["server"]["server_port"]    # Port for receiving control
 # client (player) setup
 player_ip = config['gamer']["player_IP"]                     # CG Gamer IP address
 player_port =config['gamer']["player_streaming_port"]       # UDP Port for streaming video to Gamer
-my_command_port = config['gamer']["palyer_command_port"]
+my_command_port = config['gamer']["player_command_port"]
 
 # sync setup
 folder_path = config[game_name]["frames"] 
@@ -49,7 +49,11 @@ received_frames = config["gamer"]["received_frames"]
 Referesh Logs
 '''
 
-[os.remove(f) for f in glob.glob(received_frames+"/*") if os.path.isfile(f)]
+# Ensure received_frames directory exists and clean it
+if not os.path.exists(received_frames):
+    os.makedirs(received_frames)
+elif os.path.exists(received_frames):
+    [os.remove(f) for f in glob.glob(received_frames+"/*") if os.path.isfile(f)]
 
 # Remove rate_Control log
 if os.path.exists(rate_log):
@@ -143,7 +147,7 @@ with open("/tmp/player_ready", "w") as f:
     f.write("ready")
 
 
-print(f"palyer is ready to receive {player_port} & command sent on {my_command_port}")
+print(f"player is ready to receive {player_port} & command sent on {my_command_port}")
 
 # Function to send command to server (Pure UDP)
 

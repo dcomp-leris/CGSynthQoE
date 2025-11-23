@@ -16,13 +16,13 @@ server:
 gamer:
     player_IP: "10.0.0.2"                 # CG Gamer (or player) IP address
     player_streaming_port: 5002           # UDP port for streaming (receiving) the frames of the video games!
-    palyer_command_port: 5003             # UDP Port for is binded in the server and used to send the command in the gamer system!
+    player_command_port: 5003             # UDP Port for is binded in the server and used to send the command in the gamer system!
     player_interface:  "player-eth0"      # Gamer interface name!
     ## CG Player Log CGReplay/player/logs (rate/time logs + video frames in png)
     player_rate_log: "./logs/ratelog_CG.csv"
     player_time_log: "./logs/responsetime_CG.csv"
     player_frame_log: "./logs/ply_frame.csv"
-    received_frames: "./logs/received_frames"
+    received_frames: "./received_frames"
     pcap_file: "./logs/my.pcap"
 # ---------------------------------------------------------------------------------------#
 # Game Data Setup 
@@ -94,7 +94,7 @@ Running:
     game: "Fortnite"     # Set it to start the CGReplay specific Game
     live_watching: True    # If you want to watch live gameplay set 'True' else set 'False'
     duration: 100   # in seconds
-    stop_frm_number: 101
+    stop_frm_number: 100
 
 # ---------------------------------------------------------------------------------------#
 # ScreAM Setup

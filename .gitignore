@@ -209,3 +209,8 @@ frame_gen/**/*.MKV
 !original_video.avi
 !original_video.mkv
 !original_video/*.mp4
+
+# CGReplay received frames and logs
+CGReplay/player/received_frames/
+CGReplay/player/logs/
+CGReplay/server/logs/

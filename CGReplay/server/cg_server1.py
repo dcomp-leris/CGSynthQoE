@@ -70,7 +70,7 @@ cg_server_socket_timeout = config["server"]["socket_timeout"]
 # Loading CG Gamer or Player Setup****************************************************************************** 
 player_ip = config['gamer']["player_IP"]                     # CG Gamer IP address
 player_port = config['gamer']["player_streaming_port"]       # UDP Port for streaming video to Gamer
-my_command_port = config['gamer']["palyer_command_port"]     # UDP Port for receiving the command in the CG server
+my_command_port = config['gamer']["player_command_port"]     # UDP Port for receiving the command in the CG server
 
 
 # Loading CG Server Sync file and Frames ***********************************************************************
@@ -324,7 +324,7 @@ def stream_frames(game_name):
         frame_id = int(file.split('.')[0])  # Extract frame ID from the filename
         print("Debug:==>", frame_id)
 
-        if frame_id == stop_frm_number+1: # stop after streaming 'stop_frm_number' frames! 
+        if frame_id == stop_frm_number: # stop after streaming 'stop_frm_number' frames! 
             break
 
         if frame is None:
@@ -516,9 +516,6 @@ def stream_frames(game_name):
                         #print("Total is logging!")
             
                     state = [None , None]
-
-
-
 
             with open(rate_control_log, "a") as f: f.write(f"{frame_id},{rate_ctl}\n")        
         idx= idx + 1
