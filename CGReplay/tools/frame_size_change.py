@@ -4,19 +4,24 @@ import glob
 import sys
 import yaml
 
-# Game folders mapping
+# Get the directory where this script is located
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG_PATH = os.path.join(SCRIPT_DIR, "../config/config.yaml")
+
+# Base paths relative to CGReplay root
+CGREPLAY_ROOT = os.path.dirname(SCRIPT_DIR)
 GAME_PATHS = {
     "Forza": {
-        "src": "/home/alireza/mycg/CGReplay/Sources/Forza",
-        "dst": "/home/alireza/mycg/CGReplay/server/Forza"
+        "src": os.path.join(CGREPLAY_ROOT, "Sources/Forza"),
+        "dst": os.path.join(CGREPLAY_ROOT, "server/Forza")
     },
     "Fortnite": {
-        "src": "/home/alireza/mycg/CGReplay/Sources/Fortnite",
-        "dst": "/home/alireza/mycg/CGReplay/server/Fortnite"
+        "src": os.path.join(CGREPLAY_ROOT, "Sources/Fortnite"),
+        "dst": os.path.join(CGREPLAY_ROOT, "server/Fortnite")
     },
     "Kombat": {
-        "src": "/home/alireza/mycg/CGReplay/Sources/Kombat",
-        "dst": "/home/alireza/mycg/CGReplay/server/Kombat"
+        "src": os.path.join(CGREPLAY_ROOT, "Sources/Kombat"),
+        "dst": os.path.join(CGREPLAY_ROOT, "server/Kombat")
     }
 }
 
@@ -29,7 +34,7 @@ game_name = sys.argv[1]
 src_folder = GAME_PATHS[game_name]["src"]
 dst_folder = GAME_PATHS[game_name]["dst"]
 
-with open("../config/config.yaml", "r") as file:
+with open(CONFIG_PATH, "r") as file:
     config = yaml.safe_load(file)
 
 resolution_width = config["encoding"]["resolution"]["width"]
