@@ -77,7 +77,7 @@ def create_topology(bandwidth=2):
     net.get('server').cmd('echo "source /home/ariel/venvs/CGSynth/bin/activate" > %s' % server_bashrc)
     net.get('server').cmd('echo "export PS1=\'(CGSynth) \\u@\\h:\\w\\$ \'" >> %s' % server_bashrc)
     net.get('server').cmd('echo "cd /home/ariel/git/CGSynth/CGReplay/server" >> %s' % server_bashrc)
-    net.get('server').cmd('echo "echo Starting CG Server in 7 seconds..." >> %s' % server_bashrc)
+    net.get('server').cmd('echo "echo Starting CG Server in 5 seconds..." >> %s' % server_bashrc)
     net.get('server').cmd('echo "sleep 5" >> %s' % server_bashrc)
     net.get('server').cmd('echo "echo Starting CG Server now..." >> %s' % server_bashrc)
     net.get('server').cmd('echo "python cg_server1.py" >> %s' % server_bashrc)
@@ -94,7 +94,7 @@ def create_topology(bandwidth=2):
     info('*** Server xterm PID: %s\n' % server_xterm)
     info('*** Player xterm PID: %s\n' % player_xterm)
     
-    info('*** Testing connectivity\n')topology_simple
+    info('*** Testing connectivity\n')
     net.pingAll()
     
     info('*** Running CLI\n')
