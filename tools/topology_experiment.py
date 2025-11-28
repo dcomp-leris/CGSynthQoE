@@ -67,20 +67,20 @@ def create_topology(bandwidth=2):
     player_bashrc = '/tmp/player_bashrc'
     
     # Player bashrc: activate venv and run cg_gamer1.py first
-    net.get('player').cmd('echo "source /home/ariel/venvs/CGSynth/bin/activate" > %s' % player_bashrc)
-    net.get('player').cmd('echo "export PS1=\'(CGSynth) \\u@\\h:\\w\\$ \'" >> %s' % player_bashrc)
+    net.get('player').cmd('echo "source /home/ariel/venvs/cgsynth/bin/activate" > %s' % player_bashrc)
+    net.get('player').cmd('echo "export PS1=\'(cgsynth) \\u@\\h:\\w\\$ \'" >> %s' % player_bashrc)
     net.get('player').cmd('echo "cd /home/ariel/git/CGSynth/CGReplay/player" >> %s' % player_bashrc)
     net.get('player').cmd('echo "echo Starting CG Player..." >> %s' % player_bashrc)
-    net.get('player').cmd('echo "python cg_gamer1.py" >> %s' % player_bashrc)
+    net.get('player').cmd('echo "python3 cg_gamer1.py" >> %s' % player_bashrc)
     
     # Server bashrc: activate venv, wait 5 seconds, then run cg_server1.py
-    net.get('server').cmd('echo "source /home/ariel/venvs/CGSynth/bin/activate" > %s' % server_bashrc)
-    net.get('server').cmd('echo "export PS1=\'(CGSynth) \\u@\\h:\\w\\$ \'" >> %s' % server_bashrc)
+    net.get('server').cmd('echo "source /home/ariel/venvs/cgsynth/bin/activate" > %s' % server_bashrc)
+    net.get('server').cmd('echo "export PS1=\'(cgsynth) \\u@\\h:\\w\\$ \'" >> %s' % server_bashrc)
     net.get('server').cmd('echo "cd /home/ariel/git/CGSynth/CGReplay/server" >> %s' % server_bashrc)
     net.get('server').cmd('echo "echo Starting CG Server in 5 seconds..." >> %s' % server_bashrc)
     net.get('server').cmd('echo "sleep 5" >> %s' % server_bashrc)
     net.get('server').cmd('echo "echo Starting CG Server now..." >> %s' % server_bashrc)
-    net.get('server').cmd('echo "python cg_server1.py" >> %s' % server_bashrc)
+    net.get('server').cmd('echo "python3 cg_server1.py" >> %s' % server_bashrc)
     
     # Open player xterm first (starts immediately)
     player_xterm_output = net.get('player').cmd('xterm -e "bash --rcfile %s" &' % player_bashrc)

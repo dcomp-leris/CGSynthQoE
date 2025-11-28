@@ -17,6 +17,8 @@ https://dl.acm.org/doi/10.1145/3744969.3748445)
   - [Requirements at a Glance](#requirements-at-a-glance)
   - [Submodules](#submodules)
   - [Python Environment Setup](#python-environment-setup)
+  - [libzbar (QR/barcode support)](#libzbar-qrbarcode-support)
+  - [GStreamer H.264 encoder plugins (x264enc)](#gstreamer-h264-encoder-plugins-x264enc)
   - [OpenCV with GStreamer Support](#opencv-with-gstreamer-support)
   - [Installing FFmpeg with VMAF Support](#installing-ffmpeg-with-vmaf-support)
   - [Quality Metrics Tools Setup](#quality-metrics-tools-setup)
@@ -36,11 +38,11 @@ https://dl.acm.org/doi/10.1145/3744969.3748445)
 
 ### Requirements at a Glance
 
-| Component                 | Python Version | Notes                              |
-|--------------------------|----------------|------------------------------------|
-| Frame generation & tools | 3.8            | Uses deadsnakes PPA                |
-| Player / CGReplay        | 3.x + OpenCV   | OpenCV must have GStreamer support |
-| Quality metrics tools    | 3.12.2         | See Quality Metrics Tools Setup    |
+| Component                 | Python Version                 | Notes                                           |
+|--------------------------|---------------------------------|-------------------------------------------------|
+| Frame generation & tools | 3.8                             | Uses deadsnakes PPA                             |
+| Player / CGReplay        | 3.10 (venv, system-site-packages) | OpenCV + GStreamer + GI (PyGObject via apt)    |
+| Quality metrics tools    | 3.12.2                          | See Quality Metrics Tools Setup                 |
 
 ### Submodules
 This project uses Git submodules. To properly initialize them, run:
@@ -68,8 +70,57 @@ sudo apt update
 sudo apt install python3.8 python3.8-venv python3.8-dev
 ```
 
+#### For CGReplay Player/Server (GI + GStreamer, Python >= 3.10)
+On Ubuntu 22.04, the `gi` module (PyGObject) comes from system packages, not from pip. If these libraries are missing, you may see errors like `ModuleNotFoundError: No module named 'gi'` or build failures mentioning `girepository-2.0`.
+
+1. Install the required system GI / PyGObject packages:
+
+```bash
+sudo apt update
+sudo apt install -y \
+    python3-gi python3-gi-cairo \
+    gir1.2-gtk-3.0 gir1.2-gdkpixbuf-2.0 \
+    libcairo2-dev libgirepository1.0-dev \
+    gobject-introspection
+```
+
+2. Create a virtual environment for CGSynth using at least Python 3.10 and enable access to system packages (so `gi` is visible inside the venv):
+
+```bash
+python3.10 -m venv --system-site-packages ~/venvs/cgsynth
+source ~/venvs/cgsynth/bin/activate
+```
+
+3. Install the Python dependencies for CGSynth in that venv:
+
+```bash
+pip install -r requirements_cgsynth.txt
+```
+
+4. Verify that `gi` and OpenCV can be imported from the venv:
+
+```bash
+python -c 'import gi, cv2; print("GI and OpenCV OK")'
+```
+
+> Note: In bash, `!` inside double quotes triggers history expansion. Prefer single quotes as above, or escape `!` if you use double quotes.
+
 #### For Quality Metrics Tools
 The quality metrics tools require Python 3.12.2. See the Quality Metrics Tools section for setup instructions.
+
+#### GStreamer H.264 encoder plugins (x264enc)
+To enable H.264 encoding for GStreamer pipelines used by the CGReplay server/player (e.g., avoid `gst_parse_error: no element "x264enc"`), install the encoder plugins:
+```bash
+sudo apt update
+sudo apt install gstreamer1.0-plugins-ugly gstreamer1.0-plugins-bad gstreamer1.0-libav
+```
+
+#### libzbar (QR/barcode support)
+To enable QR/barcode reading via OpenCV/pyzbar, install the `libzbar` system libraries (Ubuntu/Debian):
+```bash
+sudo apt update
+sudo apt install libzbar0 libzbar-dev
+```
 
 #### OpenCV with GStreamer Support
 
@@ -210,6 +261,8 @@ pip install -r frame_gen/tools/requirements_tools.txt
 
 Follow these steps to go from PNG frames to PCAP, back to an MP4, extract frames, optionally interpolate (RIFE), and re-create a video.
 
+> Note: For live experiments that generate PCAP traces from the network (rather than offline packetization), install `tshark` and run it with `sudo` to capture the traffic.
+
 1) Generate an RTP PCAP from PNG frames
 
 ```bash
@@ -271,6 +324,7 @@ A pair of Python scripts for working with video streams over RTP networks. These
 - Python 3.6+
 - Scapy (`pip install scapy`)
 - FFmpeg (must be installed and available in your PATH)
+- `tshark` (Wireshark CLI) for capturing live RTP traffic to PCAP when running experiments (typically requires `sudo`)
 
 Additional Python dependencies:
 ```bash
@@ -434,6 +488,7 @@ For detailed usage instructions of each quality metrics tool, please refer to th
 - Some tools (like LPIPS) require CUDA-capable GPU for optimal performance
 - Make sure your input videos/frames have matching dimensions when comparing them
 - The tools are designed to work with common video formats (MP4) and image formats (PNG)
+- For Mininet-based client/server experiments (e.g., `tools/topology_experiment.py`), ensure `xterm` is installed so the server and player terminals can open correctly
 
 ## Troubleshooting
 
