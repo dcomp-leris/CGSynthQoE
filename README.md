@@ -28,6 +28,7 @@ https://dl.acm.org/doi/10.1145/3744969.3748445)
   - [Quality Metrics Tools](#4-quality-metrics-tools)
 - [Notes](#notes)
 - [Troubleshooting](#troubleshooting)
+  - [OpenCV + NumPy (cv2 import errors)](#troubleshooting-opencv--numpy-cv2-import-errors)
 - [Reproducing Video Quality Analysis Results](#reproducing-video-quality-analysis-results)
 - [Practical Usage: ffmpeg with VMAF](#practical-usage-ffmpeg-with-vmaf)
 
@@ -445,6 +446,51 @@ For detailed usage instructions of each quality metrics tool, please refer to th
   - When a game is specified in `config.yaml` (under `Running:game`), ensure a folder with the same name exists in the `server/` directory (e.g., if game is set to "Kombat", you need a `server/Kombat/` folder)
   - The game folder must contain frames in sequential order
    - Both `player/` and `server/` directories must have a `logs` folder created in them for proper operation
+
+### Troubleshooting OpenCV + NumPy (cv2 import errors)
+
+**Typical symptoms**
+
+- `ImportError: numpy.core.multiarray failed to import`
+- `_ARRAY_API not found` when doing `import cv2`
+- `cv2` imports fine in system Python but fails inside the venv.
+
+**Root causes**
+
+1. **OpenCV built against NumPy 1.x, but the venv has NumPy 2.x**
+   - OpenCV's Python bindings are compiled against NumPy's C API.
+   - NumPy 2.x changes the C ABI; OpenCV built with NumPy 1.x cannot load against NumPy 2.x.
+
+2. **OpenCV built against system Python instead of the venv**
+   - If the environment is created with tools like `uv` or misconfigured, CMake may detect `/usr/bin/python3.x` instead of the venv interpreter.
+   - The resulting `cv2*.so` may be placed in `~/opencv_build/build/lib/python3/...` instead of `venv/lib/python3.x/site-packages/`, so the venv cannot find it.
+
+**Recommended fix**
+
+1. **Create the venv with `python -m venv`**:
+
+```bash
+python3 -m venv ~/venvs/cgsynth
+source ~/venvs/cgsynth/bin/activate
+```
+
+2. **Install a NumPy 1.x version in that venv before building OpenCV**:
+
+```bash
+pip install "numpy<2"
+```
+
+3. **Configure OpenCV with the venv Python in CMake** and verify that variables such as:
+
+- `PYTHON_EXECUTABLE` point to `.../venvs/cgsynth/bin/python`
+- `PYTHON3_PACKAGES_PATH` points to `.../venvs/cgsynth/lib/python3.10/site-packages/`
+
+4. **Ensure `cv2` ends up inside the venv**:
+
+- After `make install`, check for `cv2*.so` under the venv's `site-packages/`.
+- If it was installed into `~/opencv_build/build/lib/python3/...`, copy it manually into the venv `site-packages/`.
+
+Once these conditions are met, running `python -c "import cv2; print(cv2.__version__)"` inside the venv should succeed.
 
 ## Reproducing Video Quality Analysis Results
 
