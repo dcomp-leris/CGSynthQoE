@@ -12,61 +12,37 @@ https://dl.acm.org/doi/10.1145/3744969.3748445)
 
 *For more details, please refer to the Wiki page of this repository.*
 
+## Table of Contents
+- [Installation](#installation)
+  - [Requirements at a Glance](#requirements-at-a-glance)
+  - [Submodules](#submodules)
+  - [Python Environment Setup](#python-environment-setup)
+  - [OpenCV with GStreamer Support](#opencv-with-gstreamer-support)
+  - [Installing FFmpeg with VMAF Support](#installing-ffmpeg-with-vmaf-support)
+  - [Quality Metrics Tools Setup](#quality-metrics-tools-setup)
+- [Quickstart: End-to-End Workflow](#quickstart-end-to-end-workflow)
+- [Architecture](#architecture)
+  - [RTP Video Tools](#1-rtp-video-tools)
+  - [Frame Extraction and Video Creation](#2-frame-extraction-and-video-creation)
+  - [Frame Generation and Degradation Toolkit](#3-frame-generation-and-degradation-toolkit)
+  - [Quality Metrics Tools](#4-quality-metrics-tools)
+- [Notes](#notes)
+- [Troubleshooting](#troubleshooting)
+- [Reproducing Video Quality Analysis Results](#reproducing-video-quality-analysis-results)
+- [Practical Usage: ffmpeg with VMAF](#practical-usage-ffmpeg-with-vmaf)
 
-Cloud gaming's unique network traffic is challenging to reproduce for research. This demo introduces Cloud Gaming Synthesizer (CGSynth), a platform that generates realistic, configurable synthetic cloud gaming (CG) traffic. CGSynth captures real CG patterns and allows their synthetic reproduction with user-defined flow/packet parameters and deterministic protocol headers. It employs a GRU for accurate, order-preserving timestamp generation and AI-based video interpolation for realistic payloads. Crucially, CGSynth integrates a QoE evaluation module using objective (e.g., SSIM) and subjective metrics (e.g., MOS) to validate synthetic traffic's video quality and responsiveness against real streams.
+## Installation
 
+### Requirements at a Glance
 
-<img width="1210" height="714" alt="image" src="https://github.com/user-attachments/assets/ddfacb9e-21da-4580-bfc7-fdb38a553b66" />
-
-## Quickstart: End-to-End Workflow
-
-Follow these steps to go from PNG frames to PCAP, back to an MP4, extract frames, optionally interpolate (RIFE), and re-create a video.
-
-1) Generate an RTP PCAP from PNG frames
-
-```bash
-# From repository root
-python tools/rtp_video_packetizer.py --game [Forza Fortnite Kombat]
-# Configure input frame directory, codec, IPs/ports, and output PCAP inside the config.yaml
-
-```
-
-2) Extract a playable MP4 from the RTP PCAP
-
-```bash
-python tools/rtp_pcap_to_video_extractor.py --input output_pcap.pcap --output output_video.mp4 --codec h264
-```
-
-3) Extract frames from the MP4
-
-```bash
-python tools/rtp_frame_extractor.py --video output_video.mp4 --out-dir output_frames/Example --fps 30
-```
-
-4) (Optional) Interpolate frames (RIFE or simple blending)
-
-```bash
-# See detailed options below and in frame_gen/interpolation/README.md
-python frame_gen/interpolation/interpolate_frames.py \
-  --method rife \
-  --game Example \
-  --resolution 1600x900 \
-  --exp 1 \
-  --generate-video yes \
-  --fps 30
-```
-
-5) Create a video from any folder of frames
-
-```bash
-python tools/create_video_from_frames.py --frames-dir output_frames/Example --output output_videos/Example.mp4 --fps 30
-```
-
-## Setup
+| Component                 | Python Version | Notes                              |
+|--------------------------|----------------|------------------------------------|
+| Frame generation & tools | 3.8            | Uses deadsnakes PPA                |
+| Player / CGReplay        | 3.x + OpenCV   | OpenCV must have GStreamer support |
+| Quality metrics tools    | 3.12.2         | See Quality Metrics Tools Setup    |
 
 ### Submodules
 This project uses Git submodules. To properly initialize them, run:
-
 ```bash
 git submodule update --init
 ```
@@ -95,6 +71,10 @@ sudo apt install python3.8 python3.8-venv python3.8-dev
 The quality metrics tools require Python 3.12.2. See the Quality Metrics Tools section for setup instructions.
 
 #### OpenCV with GStreamer Support
+
+<details>
+  <summary><strong>Show detailed OpenCV build instructions</strong></summary>
+
 The CGReplay player component requires OpenCV built with GStreamer support to properly handle video streams. Pre-built packages from pip typically lack this support, so you'll need to build OpenCV from source:
 
 1. First, install the necessary dependencies:
@@ -142,7 +122,139 @@ python -c "import cv2; print(cv2.getBuildInformation())" | grep -i gstreamer
 ```
    You should see `GStreamer: YES` in the output.
 
-## Project Components
+</details>
+
+### Installing FFmpeg with VMAF Support
+
+<details>
+  <summary><strong>Show detailed VMAF + FFmpeg build steps</strong></summary>
+
+VMAF (Video Multi-Method Assessment Fusion) is a perceptual video quality metric developed by Netflix. To use VMAF-based quality metrics in this project, you need to build and install both libvmaf and ffmpeg with VMAF support. This section provides step-by-step instructions for Ubuntu 22.04/24.04 (adapt as needed for your system).
+
+#### 1. Install Build Dependencies
+
+```bash
+sudo apt update
+sudo apt install -y git build-essential pkg-config libtool \
+    libssl-dev yasm cmake python3-venv meson ninja-build nasm \
+    libass-dev libfreetype6-dev libtheora-dev libvorbis-dev \
+    libx264-dev libx265-dev libnuma-dev
+```
+
+#### 2. Clone and Build libvmaf
+
+```bash
+git clone https://github.com/Netflix/vmaf.git
+cd vmaf
+make
+sudo make install
+sudo ldconfig
+cd ..
+```
+
+#### 3. Clone and Build ffmpeg with VMAF Support
+
+```bash
+git clone https://git.ffmpeg.org/ffmpeg.git ffmpeg
+cd ffmpeg
+./configure --enable-gpl --enable-libx264 --enable-libx265 --enable-libvmaf
+make -j$(nproc)
+sudo make install
+cd ..
+```
+
+#### 4. Verify VMAF Support in ffmpeg
+
+You can verify that ffmpeg was built with VMAF support by running:
+
+```bash
+ffmpeg -filters | grep vmaf
+```
+
+You should see output similar to:
+
+```
+.. libvmaf           VV->V      Calculate the VMAF between two video streams.
+.. vmafmotion        V->V       Calculate the VMAF Motion score.
+```
+
+#### 5. Example Usage
+
+To compute the VMAF score between two videos:
+
+```bash
+ffmpeg -i reference.mp4 -i distorted.mp4 -lavfi "[0:v][1:v]libvmaf" -f null -
+```
+
+This will print VMAF scores to the console.
+
+**Tip:** For more advanced usage and options, refer to the official [FFmpeg VMAF documentation](https://ffmpeg.org/ffmpeg-filters.html#libvmaf).
+
+</details>
+
+### Quality Metrics Tools Setup
+
+1. Create a Python virtual environment:
+```bash
+python3.12.2 -m venv /home/user/venv/cgreplay_metrics
+source /home/user/venv/cgreplay_metrics/bin/activate
+```
+
+2. Install dependencies:
+```bash
+pip install -r frame_gen/tools/requirements_tools.txt
+```
+
+## Quickstart: End-to-End Workflow
+
+Follow these steps to go from PNG frames to PCAP, back to an MP4, extract frames, optionally interpolate (RIFE), and re-create a video.
+
+1) Generate an RTP PCAP from PNG frames
+
+```bash
+# From repository root
+python tools/rtp_video_packetizer.py --game [Forza Fortnite Kombat]
+# Configure input frame directory, codec, IPs/ports, and output PCAP inside the config.yaml
+
+```
+
+2) Extract a playable MP4 from the RTP PCAP
+
+```bash
+python tools/rtp_pcap_to_video_extractor.py --input output_pcap.pcap --output output_video.mp4 --codec h264
+```
+
+3) Extract frames from the MP4
+
+```bash
+python tools/rtp_frame_extractor.py --video output_video.mp4 --out-dir output_frames/Example --fps 30
+```
+
+4) (Optional) Interpolate frames (RIFE or simple blending)
+
+```bash
+# See detailed options below and in frame_gen/interpolation/README.md
+python frame_gen/interpolation/interpolate_frames.py \
+  --method rife \
+  --game Example \
+  --resolution 1600x900 \
+  --exp 1 \
+  --generate-video yes \
+  --fps 30
+```
+
+5) Create a video from any folder of frames
+
+```bash
+python tools/create_video_from_frames.py --frames-dir output_frames/Example --output output_videos/Example.mp4 --fps 30
+```
+
+
+Cloud gaming's unique network traffic is challenging to reproduce for research. This demo introduces Cloud Gaming Synthesizer (CGSynth), a platform that generates realistic, configurable synthetic cloud gaming (CG) traffic. CGSynth captures real CG patterns and allows their synthetic reproduction with user-defined flow/packet parameters and deterministic protocol headers. It employs a GRU for accurate, order-preserving timestamp generation and AI-based video interpolation for realistic payloads. Crucially, CGSynth integrates a QoE evaluation module using objective (e.g., SSIM) and subjective metrics (e.g., MOS) to validate synthetic traffic's video quality and responsiveness against real streams.
+
+<img width="1210" height="714" alt="image" src="https://github.com/user-attachments/assets/ddfacb9e-21da-4580-bfc7-fdb38a553b66" />
+
+## Architecture
 
 ### 1. RTP Video Tools
 
@@ -333,69 +445,6 @@ For detailed usage instructions of each quality metrics tool, please refer to th
   - When a game is specified in `config.yaml` (under `Running:game`), ensure a folder with the same name exists in the `server/` directory (e.g., if game is set to "Kombat", you need a `server/Kombat/` folder)
   - The game folder must contain frames in sequential order
    - Both `player/` and `server/` directories must have a `logs` folder created in them for proper operation
-
-## Installing FFmpeg with VMAF Support
-
-VMAF (Video Multi-Method Assessment Fusion) is a perceptual video quality metric developed by Netflix. To use VMAF-based quality metrics in this project, you need to build and install both libvmaf and ffmpeg with VMAF support. This section provides step-by-step instructions for Ubuntu 22.04/24.04 (adapt as needed for your system).
-
-### 1. Install Build Dependencies
-
-```bash
-sudo apt update
-sudo apt install -y git build-essential pkg-config libtool \
-    libssl-dev yasm cmake python3-venv meson ninja-build nasm \
-    libass-dev libfreetype6-dev libtheora-dev libvorbis-dev \
-    libx264-dev libx265-dev libnuma-dev
-```
-
-### 2. Clone and Build libvmaf
-
-```bash
-git clone https://github.com/Netflix/vmaf.git
-cd vmaf
-make
-sudo make install
-sudo ldconfig
-cd ..
-```
-
-### 3. Clone and Build ffmpeg with VMAF Support
-
-```bash
-git clone https://git.ffmpeg.org/ffmpeg.git ffmpeg
-cd ffmpeg
-./configure --enable-gpl --enable-libx264 --enable-libx265 --enable-libvmaf
-make -j$(nproc)
-sudo make install
-cd ..
-```
-
-### 4. Verify VMAF Support in ffmpeg
-
-You can verify that ffmpeg was built with VMAF support by running:
-
-```bash
-ffmpeg -filters | grep vmaf
-```
-
-You should see output similar to:
-
-```
-.. libvmaf           VV->V      Calculate the VMAF between two video streams.
-.. vmafmotion        V->V       Calculate the VMAF Motion score.
-```
-
-### 5. Example Usage
-
-To compute the VMAF score between two videos:
-
-```bash
-ffmpeg -i reference.mp4 -i distorted.mp4 -lavfi "[0:v][1:v]libvmaf" -f null -
-```
-
-This will print VMAF scores to the console.
-
-**Tip:** For more advanced usage and options, refer to the official [FFmpeg VMAF documentation](https://ffmpeg.org/ffmpeg-filters.html#libvmaf).
 
 ## Reproducing Video Quality Analysis Results
 
