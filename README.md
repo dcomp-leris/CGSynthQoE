@@ -94,12 +94,35 @@ sudo apt install python3.8 python3.8-venv python3.8-dev
 #### For Quality Metrics Tools
 The quality metrics tools require Python 3.12.2. See the Quality Metrics Tools section for setup instructions.
 
-#### OpenCV with GStreamer Support
-The CGReplay player component requires OpenCV built with GStreamer support to properly handle video streams. Pre-built packages from pip typically lack this support, so you'll need to build OpenCV from source:
+Absolutely! Here’s a **clear, step-by-step version** for the README/documentation that guides users to build OpenCV with GStreamer support for your CGSynth project. I’ll make it explicit about directories, virtual environments, and paths so there’s no ambiguity.
 
-1. First, install the necessary dependencies:
+---
+
+#### Building OpenCV with GStreamer Support for CGSynth
+
+Some CGSynth components (e.g., CGReplay player) require OpenCV built with **GStreamer support**. Pre-built pip packages often lack this, so building from source is necessary.
+
+##### 1. Prepare a Virtual Environment
+
+We recommend using a dedicated Python virtual environment for CGSynth:
+
 ```bash
-sudo apt-get install -y build-essential cmake git pkg-config \
+# Create a virtual environment
+python3.8 -m venv ~/venvs/cgsynth
+
+# Activate it
+source ~/venvs/cgsynth/bin/activate
+```
+
+All OpenCV Python bindings will be installed in this environment.
+
+---
+
+##### 2. Install Build Dependencies
+
+```bash
+sudo apt update
+sudo apt install -y build-essential cmake git pkg-config \
     libgtk-3-dev libavcodec-dev libavformat-dev libswscale-dev \
     libv4l-dev libxvidcore-dev libx264-dev libjpeg-dev \
     libpng-dev libtiff-dev gfortran openexr \
@@ -107,40 +130,85 @@ sudo apt-get install -y build-essential cmake git pkg-config \
     python3-dev python3-numpy libatlas-base-dev
 ```
 
-2. Clone the OpenCV repositories:
+---
+
+##### 3. Clone OpenCV Repositories
+
 ```bash
+# Create a build folder for OpenCV
 mkdir -p ~/opencv_build && cd ~/opencv_build
+
+# Clone OpenCV and OpenCV contrib modules
 git clone https://github.com/opencv/opencv.git
 git clone https://github.com/opencv/opencv_contrib.git
 ```
 
-3. Configure the build with CMake (adjust paths to match your environment):
+---
+
+##### 4. Configure the Build with CMake
+
+Create a separate build directory:
+
 ```bash
 mkdir -p ~/opencv_build/build && cd ~/opencv_build/build
+```
+
+Run CMake to configure the build. **Adjust paths carefully**:
+
+```bash
 cmake -D CMAKE_BUILD_TYPE=RELEASE \
-      -D CMAKE_INSTALL_PREFIX=/path/to/your/virtualenv \
+      -D CMAKE_INSTALL_PREFIX=~/venvs/cgsynth \
       -D INSTALL_PYTHON_EXAMPLES=ON \
       -D INSTALL_C_EXAMPLES=OFF \
       -D OPENCV_ENABLE_NONFREE=ON \
       -D WITH_GSTREAMER=ON \
       -D OPENCV_EXTRA_MODULES_PATH=~/opencv_build/opencv_contrib/modules \
       -D BUILD_EXAMPLES=ON \
-      -D PYTHON_EXECUTABLE=/path/to/your/virtualenv/bin/python \
-      -D PYTHON_DEFAULT_EXECUTABLE=/path/to/your/virtualenv/bin/python \
-      ../opencv
+      -D PYTHON_EXECUTABLE=~/venvs/cgsynth/bin/python \
+      -D PYTHON_DEFAULT_EXECUTABLE=~/venvs/cgsynth/bin/python \
+      ~/opencv_build/opencv
 ```
 
-4. Build and install (replace `8` with the number of CPU cores you want to use):
+**Notes:**
+
+* `CMAKE_INSTALL_PREFIX` must point to your virtual environment.
+* `OPENCV_EXTRA_MODULES_PATH` points to the `modules` folder inside `opencv_contrib`.
+* The last argument (`~/opencv_build/opencv`) must point to the OpenCV **source folder**.
+
+---
+
+##### 5. Build and Install OpenCV
+
 ```bash
+# Compile using all CPU cores (replace 8 with your core count)
 make -j8
+
+# Install to the virtual environment
 make install
 ```
 
-5. Verify that OpenCV has GStreamer support:
+---
+
+##### 6. Verify Installation
+
 ```bash
+# Activate virtual environment if not already
+source ~/venvs/cgsynth/bin/activate
+
+# Check Python bindings
 python -c "import cv2; print(cv2.getBuildInformation())" | grep -i gstreamer
 ```
-   You should see `GStreamer: YES` in the output.
+
+You should see:
+
+```
+GStreamer: YES
+```
+
+---
+
+✅ After this, your CGSynth Python components can use OpenCV with GStreamer support, which is required for proper video stream handling in CGReplay.
+
 
 ## Project Components
 
