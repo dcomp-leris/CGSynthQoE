@@ -480,6 +480,35 @@ pip install -r frame_gen/tools/requirements_tools.txt
    - Includes functions for reading, writing, resizing, and frame rate modification
    - Can be imported as a Python module
 
+5. **Per-frame VMAF Scatterplot** (`tools/vmaf_scatter.py`)
+   - Computes per-frame VMAF between reference server frames and received frames for multiple experiments.
+   - Reference frames are read from `CGReplay/server/<Game>/`.
+   - Distorted/received frames are read from `acm_tomm_experiments/reference_vs_real/<Game>/<BitrateLabel>/received_frames/`.
+   - Plots a scatterplot of VMAF vs. frame index for each experiment, with a light connecting line to make trends easier to see.
+   - Skips missing frames (frames present in the reference but not in `received_frames`).
+   - Saves the resulting plot into `acm_tomm_experiments/graphs/` and also shows it interactively.
+   - Example usage:
+
+     ```bash
+     cd ~/git/CGSynth
+
+     python3 tools/vmaf_scatter.py \
+       --game Fortnite \
+       --bitrates \
+         2Mbit_Fortnite \
+         4Mbit_Fortnite \
+         6Mbit_Fortnite \
+         8Mbit_Fortnite \
+         10Mbit_Fortnite \
+       --labels \
+         "BW: 2Mbps" \
+         "BW: 4Mbps" \
+         "BW: 6Mbps" \
+         "BW: 8Mbps" \
+         "BW: 10Mbps" \
+       --total-frames 120
+     ```
+
 For detailed usage instructions of each quality metrics tool, please refer to the README.md in the `frame_gen/tools` directory.
 
 ## Notes

@@ -13,6 +13,22 @@ import shutil
 import yaml
 import pwd
 
+
+def chown_recursive(path, uid, gid):
+    """Recursively change ownership of a directory tree."""
+    for dirpath, dirnames, filenames in os.walk(path):
+        try:
+            os.chown(dirpath, uid, gid)
+        except Exception:
+            pass
+        for name in filenames:
+            full = os.path.join(dirpath, name)
+            try:
+                os.chown(full, uid, gid)
+            except Exception:
+                pass
+
+
 class GameTopo(Topo):
     """
     Simple topology: server <-> switch <-> player
@@ -168,7 +184,45 @@ def create_topology(bandwidth):
                 if sudo_user:
                     try:
                         pw_entry = pwd.getpwnam(sudo_user)
-                        os.chown(dest_path, pw_entry.pw_uid, pw_entry.pw_gid)
+                        uid, gid = pw_entry.pw_uid, pw_entry.pw_gid
+
+                        # Fix ownership of final PCAP
+                        os.chown(dest_path, uid, gid)
+
+                        # Also fix ownership of received_frames so the user can manage frames
+                        recv_rel = cfg.get('gamer', {}).get('received_frames')
+                        if recv_rel:
+                            if os.path.isabs(recv_rel):
+                                recv_path = recv_rel
+                            else:
+                                recv_path = os.path.abspath(os.path.join(player_dir, recv_rel))
+                            if os.path.exists(recv_path):
+                                chown_recursive(recv_path, uid, gid)
+
+                        # Fix player log directory ownership
+                        player_rate_rel = cfg.get('gamer', {}).get('player_rate_log')
+                        if player_rate_rel:
+                            if os.path.isabs(player_rate_rel):
+                                player_logs_dir = os.path.dirname(player_rate_rel)
+                            else:
+                                player_logs_dir = os.path.dirname(
+                                    os.path.abspath(os.path.join(player_dir, player_rate_rel))
+                                )
+                            if player_logs_dir and os.path.exists(player_logs_dir):
+                                chown_recursive(player_logs_dir, uid, gid)
+
+                        # Fix server log directory ownership
+                        server_dir = os.path.join(repo_root, 'CGReplay', 'server')
+                        server_log_rel = cfg.get('server', {}).get('log_server')
+                        if server_log_rel:
+                            if os.path.isabs(server_log_rel):
+                                server_logs_dir = os.path.dirname(server_log_rel)
+                            else:
+                                server_logs_dir = os.path.dirname(
+                                    os.path.abspath(os.path.join(server_dir, server_log_rel))
+                                )
+                            if server_logs_dir and os.path.exists(server_logs_dir):
+                                chown_recursive(server_logs_dir, uid, gid)
                     except Exception:
                         pass
                 try:

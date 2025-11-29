@@ -1,0 +1,10 @@
+frame_id,rate_ctl
+6,['Rate Rise', 0.1, 3080.0, 'Ack']
+27,['Rate Decrease', 0.3, 2156.0, 'Ack']
+38,['Rate Decrease', 0.3, 1509.2, 'Ack']
+50,['Rate Decrease', 0.3, 1509.2, 'Ack']
+61,['Rate Decrease', 0.3, 1509.2, 'Ack']
+73,['Rate Decrease', 0.3, 1509.2, 'Ack']
+85,['Rate Decrease', 0.3, 1509.2, 'Ack']
+96,['Rate Decrease', 0.3, 1509.2, 'Ack']
+109,['Rate Decrease', 0.3, 1509.2, 'Ack']

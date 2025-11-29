@@ -438,7 +438,18 @@ def main():
         original_folder = reference_folder
     else:
         # Fallback to rescaled folder if reference doesn't exist
-        rescaled_folder = frame_gen_dir.parent / 'rescaling' / f'downscaled_original_frames_from_1920_1080_to_{args.res.replace("x", "_")}'
+        # Try with game name first
+        rescaled_folder_name = f'downscaled_original_frames_{args.game}_from_1920_1080_to_{args.res.replace("x", "_")}'
+        rescaled_folder = frame_gen_dir.parent / 'rescaling' / rescaled_folder_name
+        
+        if not rescaled_folder.exists():
+            # Try legacy name without game
+            rescaled_folder_name_legacy = f'downscaled_original_frames_from_1920_1080_to_{args.res.replace("x", "_")}'
+            rescaled_folder_legacy = frame_gen_dir.parent / 'rescaling' / rescaled_folder_name_legacy
+            
+            if rescaled_folder_legacy.exists():
+                rescaled_folder = rescaled_folder_legacy
+        
         if rescaled_folder.exists():
             original_folder = rescaled_folder
         else:

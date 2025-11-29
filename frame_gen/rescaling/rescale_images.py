@@ -9,17 +9,25 @@ original_res = [1920, 1080]
 original_folder = f"original_frames_{original_res[0]}_{original_res[1]}"
 target_downscaled_res = [1600, 900]
 target_upscaled_res = [1920, 1080]
+game_name = None
+custom_output_path = None
 
 
 def get_downscaled_folder():
     """Return folder name for downscaled images based on current settings."""
-    return (f"downscaled_original_frames_from_{original_res[0]}_{original_res[1]}_"
+    if custom_output_path:
+        return custom_output_path
+    game_part = f"_{game_name}" if game_name else ""
+    return (f"downscaled_original_frames{game_part}_from_{original_res[0]}_{original_res[1]}_"
             f"to_{target_downscaled_res[0]}_{target_downscaled_res[1]}")
 
 
 def get_upscaled_folder():
     """Return folder name for upscaled images based on current settings."""
-    return (f"upscaled_original_frames_from_{target_downscaled_res[0]}_{target_downscaled_res[1]}_"
+    if custom_output_path:
+        return custom_output_path
+    game_part = f"_{game_name}" if game_name else ""
+    return (f"upscaled_original_frames{game_part}_from_{target_downscaled_res[0]}_{target_downscaled_res[1]}_"
             f"to_{target_upscaled_res[0]}_{target_upscaled_res[1]}")
 
 
@@ -99,11 +107,49 @@ if __name__ == "__main__":
     parser.add_argument("mode", choices=["down", "up"], help="down: downscale, up: upscale from downscaled")
     parser.add_argument("--folder", "-f", dest="folder", default=None,
                         help="Path to folder containing original PNG frames. If omitted, defaults to original_frames_<WxH>.")
+    parser.add_argument("--game", type=str, default=None,
+                        help="Game name to include in the output folder name (e.g. Fortnite).")
+    parser.add_argument("--resolution", type=str, default=None,
+                        help="Target resolution in WIDTHxHEIGHT format (e.g. 1280x720). Defaults to 1600x900 for downscale, 1920x1080 for upscale.")
+    parser.add_argument("--output", "-o", dest="output", default=None,
+                        help="Custom output directory. If omitted, a descriptive name is generated automatically.")
     args = parser.parse_args()
 
     # Override original_folder if provided
     if args.folder:
         original_folder = args.folder  # override default folder
+
+    # Set game name if provided
+    if args.game:
+        game_name = args.game
+
+    # Parse resolution if provided
+    if args.resolution:
+        try:
+            w, h = map(int, args.resolution.lower().split('x'))
+            if args.mode == "down":
+                target_downscaled_res = [w, h]
+            else:
+                target_upscaled_res = [w, h]
+        except ValueError:
+            print("Invalid resolution format. Use WIDTHxHEIGHT (e.g. 1280x720)")
+            sys.exit(1)
+
+    # Override output folder if provided
+    if args.output:
+        # We need to monkey-patch or modify how the folder getters work
+        # Since we're about to run the function, we can just let the functions use the default logic
+        # and then override the folder variable locally inside the function, 
+        # OR we can assign the output folder to a global variable that the getters check.
+        # A cleaner way for this script structure is to modify the functions to accept an override,
+        # but simpler here is to just set global variables if we had them.
+        # Actually, let's just pass the output folder to the functions? 
+        # The functions downscale_images() and upscale_images() don't take args currently.
+        # Let's just update the getter functions to return the custom path if set.
+        pass # Logic handled in getters below
+
+    # We'll use a global for the custom output path
+    custom_output_path = args.output
 
     if args.mode == "down":
         downscale_images()
