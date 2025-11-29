@@ -94,7 +94,7 @@ scream_sender=config["protocols"]["sender"]                     # Sender as CGSe
 # Loading Sync Setup *******************************************************************************************
 Enc_Rate_jump = config["sync"]["jump"]                          # CGReplay Encoding Frame Rate jump!
 Enc_Rate_rise = config["sync"]["rise"]                          # CGReplay Encoding Frame Rate rise!
-Enc_Rate_decrese = config["sync"]["decrese"]                    # CGReplay Encoding Frame Rate decrease!
+Enc_Rate_decrease = config["sync"]["decrease"]                  # CGReplay Encoding Frame Rate decrease!
 Enc_Rate_fall = config["sync"]["fall"]                          # CGReplay Encoding Frame Rate fall!
 
 
@@ -441,8 +441,8 @@ def stream_frames(game_name):
                 elif my_gap > window_max:
                     print(f'(Ack) [Critical Sync: (Rate Decrease)] ==> Frame ID is {frame_id} with Gap {my_gap} \n [player fps = {received_fps}] [server fps = {current_srv_fps}] \n [player cps = {received_cps} [server cps = {current_cps}]] | bitrate = {bitrate}')
                     # print(f'(Ack) (**Wait**) ==> Received Frame is {received_fame_id} == current {frame_id} \n [fps = {received_fps}] [server fps = {current_srv_fps}] but Gap is {my_gap}')
-                    bitrate = bitrate - (bitrate * Enc_Rate_decrese) if bitrate_min <= bitrate <= bitrate_max else bitrate
-                    rate_ctl = ['Rate Decrease', Enc_Rate_decrese, bitrate,rate_ctl[3]]
+                    bitrate = bitrate - (bitrate * Enc_Rate_decrease) if bitrate_min <= bitrate <= bitrate_max else bitrate
+                    rate_ctl = ['Rate Decrease', Enc_Rate_decrease, bitrate,rate_ctl[3]]
                     #idx = idx - my_gap
 
                 #with open(rate_control_log, "a") as f: f.write(f"{frame_id},{rate_ctl}\n")
