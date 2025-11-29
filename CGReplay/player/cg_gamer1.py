@@ -457,7 +457,7 @@ while True:
 
 
     my_try_counter = my_try_counter + 1
-    print(f'Recieved Frame # is: {my_try_counter}')
+    print(f'Received Frame # is: {my_try_counter}')
     
     # Write any remaining in the log
     if log_frame_buffer:
