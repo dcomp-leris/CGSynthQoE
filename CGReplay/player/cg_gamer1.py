@@ -23,6 +23,9 @@ with open("../config/config.yaml", "r") as file:
 # game name
 game_name = config["Running"]["game"]
 stop_frm_number = config["Running"]["stop_frm_number"]
+capturing_options = config.get("capturing_options", {})
+enable_pcap = capturing_options.get("enable_pcap", False)
+pcap_file = config["gamer"].get("pcap_file")
 
 
 # server setup
@@ -43,6 +46,11 @@ rate_log = config["gamer"]["player_rate_log"]
 time_log = config["gamer"]["player_time_log"]
 frame_log = config["gamer"]["player_frame_log"]
 received_frames = config["gamer"]["received_frames"]
+
+# Ensure player logs directory exists
+logs_dir = os.path.dirname(rate_log)
+if logs_dir:
+    os.makedirs(logs_dir, exist_ok=True)
 
 
 '''
@@ -73,7 +81,7 @@ with open(rate_log, "w") as f:
 with open(time_log, "w") as f:
     f.write("frame_id,frame_timestamp,cmd_timestamp\n")
 with open(frame_log, "w") as f:
-    f.write("frame_id,fps,retry_status\n")
+    f.write("frame_id,frame_counter,fps,retry_status\n")
 
 
 
@@ -148,6 +156,10 @@ with open("/tmp/player_ready", "w") as f:
 
 
 print(f"player is ready to receive {player_port} & command sent on {my_command_port}")
+if enable_pcap:
+    print(f"PCAP capture is ENABLED; expected output path: {pcap_file}")
+else:
+    print("PCAP capture is DISABLED (capturing_options.enable_pcap=False)")
 
 # Function to send command to server (Pure UDP)
 

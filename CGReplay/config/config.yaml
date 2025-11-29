@@ -23,7 +23,8 @@ gamer:
     player_time_log: "./logs/responsetime_CG.csv"
     player_frame_log: "./logs/ply_frame.csv"
     received_frames: "./received_frames"
-    pcap_file: "./logs/my.pcap"
+    pcap_file: "./output.pcap"   # Final PCAP location under CGReplay/player/ (Mininet will use /tmp internally and then copy here)
+
 # ---------------------------------------------------------------------------------------#
 # Game Data Setup 
 Forza:  # possible values: Fortnite  or  Kombat
@@ -61,9 +62,9 @@ encoding:
     resolution:
         width: 1280 # 1280 #800 #600 # default 1364 server ==> # 1920
         height: 720 #720  #720 #700 #400 # default 768  server ==? # 1080
-    starting_bitrate: 10000 # 5000 Kbps Note: To have less frame loss, please set it to a appropriate value for begining! 
-    bitrate_min: 2000
-    bitrate_max: 50000
+    starting_bitrate: 1400 # 5000 Kbps Note: To have less frame loss, please set it to a appropriate value for begining! 
+    bitrate_min: 1000
+    bitrate_max: 2000
 # ---------------------------------------------------------------------------------------#
 # Description: common Resolution
     # 1920×1080 (Full HD, 1080p)
@@ -93,8 +94,8 @@ sync:
 Running:
     game: "Fortnite"     # Set it to start the CGReplay specific Game
     live_watching: True    # If you want to watch live gameplay set 'True' else set 'False'
-    duration: 100   # in seconds
-    stop_frm_number: 100
+    duration: 30   # in seconds
+    stop_frm_number: 120
 
 # ---------------------------------------------------------------------------------------#
 # ScreAM Setup
@@ -102,6 +103,9 @@ protocols:
     SCReAM: False # False = 0 / True = 1
     sender: "../scream/scream/gstscream/scripts/sender.sh"
     receiver: "../scream/scream/gstscream/scripts/receiver.sh"
+
+capturing_options:
+    enable_pcap: True
 
 
 

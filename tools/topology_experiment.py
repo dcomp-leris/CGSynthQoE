@@ -8,6 +8,10 @@ from mininet.log import setLogLevel, info
 from mininet.cli import CLI
 import sys
 import argparse
+import os
+import shutil
+import yaml
+import pwd
 
 class GameTopo(Topo):
     """
@@ -22,7 +26,7 @@ class GameTopo(Topo):
     Designed for testing cloud gaming applications under controlled
     network conditions with adjustable bandwidth limitations.
     """
-    def __init__(self, bandwidth=2, **opts):
+    def __init__(self, bandwidth, **opts):
         Topo.__init__(self, **opts)
         
         # Add switch
@@ -36,10 +40,36 @@ class GameTopo(Topo):
         self.addLink(server, switch, bw=bandwidth)
         self.addLink(switch, player, bw=bandwidth)
 
-def create_topology(bandwidth=2):
+def create_topology(bandwidth):
     """
     Create and run the game topology
     """
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    # Clean previous PCAPs before starting a new experiment
+    try:
+        clean_config_path = os.path.join(repo_root, 'CGReplay', 'config', 'config.yaml')
+        if os.path.exists(clean_config_path):
+            with open(clean_config_path, 'r') as f:
+                cfg_clean = yaml.safe_load(f)
+            raw_pcap = cfg_clean.get('gamer', {}).get('pcap_file')
+            if raw_pcap:
+                player_dir = os.path.join(repo_root, 'CGReplay', 'player')
+                if os.path.isabs(raw_pcap):
+                    final_pcap = raw_pcap
+                else:
+                    final_pcap = os.path.abspath(os.path.join(player_dir, raw_pcap))
+                tmp_pcap = os.path.join('/tmp', os.path.basename(final_pcap))
+
+                # Remove both the internal /tmp capture file and any previous final file
+                for old_path in {final_pcap, tmp_pcap}:
+                    try:
+                        os.remove(old_path)
+                    except FileNotFoundError:
+                        pass
+    except Exception as e:
+        info('*** Error cleaning previous PCAP: %s\n' % e)
+
     topo = GameTopo(bandwidth=bandwidth)
     net = Mininet(topo=topo, link=TCLink, controller=None)
     
@@ -66,19 +96,19 @@ def create_topology(bandwidth=2):
     server_bashrc = '/tmp/server_bashrc'
     player_bashrc = '/tmp/player_bashrc'
     
-    # Player bashrc: activate venv and run cg_gamer1.py first
+    # Player bashrc: activate venv and run run_gamer.py first
     net.get('player').cmd('echo "source /home/ariel/venvs/cgsynth/bin/activate" > %s' % player_bashrc)
     net.get('player').cmd('echo "export PS1=\'(cgsynth) \\u@\\h:\\w\\$ \'" >> %s' % player_bashrc)
     net.get('player').cmd('echo "cd /home/ariel/git/CGSynth/CGReplay/player" >> %s' % player_bashrc)
     net.get('player').cmd('echo "echo Starting CG Player..." >> %s' % player_bashrc)
-    net.get('player').cmd('echo "python3 cg_gamer1.py" >> %s' % player_bashrc)
+    net.get('player').cmd('echo "python3 run_gamer.py" >> %s' % player_bashrc)
     
     # Server bashrc: activate venv, wait 5 seconds, then run cg_server1.py
     net.get('server').cmd('echo "source /home/ariel/venvs/cgsynth/bin/activate" > %s' % server_bashrc)
     net.get('server').cmd('echo "export PS1=\'(cgsynth) \\u@\\h:\\w\\$ \'" >> %s' % server_bashrc)
     net.get('server').cmd('echo "cd /home/ariel/git/CGSynth/CGReplay/server" >> %s' % server_bashrc)
-    net.get('server').cmd('echo "echo Starting CG Server in 5 seconds..." >> %s' % server_bashrc)
-    net.get('server').cmd('echo "sleep 5" >> %s' % server_bashrc)
+    net.get('server').cmd('echo "echo Starting CG Server in 3 seconds..." >> %s' % server_bashrc)
+    net.get('server').cmd('echo "sleep 3" >> %s' % server_bashrc)
     net.get('server').cmd('echo "echo Starting CG Server now..." >> %s' % server_bashrc)
     net.get('server').cmd('echo "python3 cg_server1.py" >> %s' % server_bashrc)
     
@@ -115,11 +145,45 @@ def create_topology(bandwidth=2):
     info('*** Stopping network\n')
     net.stop()
 
+    try:
+        config_path = os.path.join(repo_root, 'CGReplay', 'config', 'config.yaml')
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as f:
+                cfg = yaml.safe_load(f)
+            raw_pcap = cfg.get('gamer', {}).get('pcap_file')
+            if raw_pcap:
+                player_dir = os.path.join(repo_root, 'CGReplay', 'player')
+                if os.path.isabs(raw_pcap):
+                    final_pcap = raw_pcap
+                else:
+                    final_pcap = os.path.abspath(os.path.join(player_dir, raw_pcap))
+                tmp_pcap = os.path.join('/tmp', os.path.basename(final_pcap))
+
+                if os.path.exists(tmp_pcap):
+                    dest_dir = os.path.dirname(final_pcap)
+                    os.makedirs(dest_dir, exist_ok=True)
+                    dest_path = final_pcap
+                    shutil.copy2(tmp_pcap, dest_path)
+                sudo_user = os.environ.get('SUDO_USER')
+                if sudo_user:
+                    try:
+                        pw_entry = pwd.getpwnam(sudo_user)
+                        os.chown(dest_path, pw_entry.pw_uid, pw_entry.pw_gid)
+                    except Exception:
+                        pass
+                try:
+                    os.chmod(dest_path, 0o644)
+                except Exception:
+                    pass
+                info('*** Copied PCAP from %s to %s\n' % (tmp_pcap, dest_path))
+    except Exception as e:
+        info('*** Error copying PCAP: %s\n' % e)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='CGReplay Mininet Topology')
-    parser.add_argument('--bandwidth', '-b', type=int, default=10, 
-                       help='Link bandwidth in Mbps (default: 10)')
+    parser.add_argument('--bandwidth', '-b', type=int, required=True,
+                       help='Link bandwidth in Mbps (required)')
     args = parser.parse_args()
-    
+
     setLogLevel('info')
     create_topology(bandwidth=args.bandwidth)

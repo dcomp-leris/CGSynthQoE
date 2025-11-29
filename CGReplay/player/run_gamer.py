@@ -31,9 +31,12 @@ def run_player3():
     print("Player3 is running ....")
     subprocess.run(["sudo","python3", "/home/leris/mygamer/tofino/player_tofino3.py"], check=True)
 '''
-def run_tshark(inter = "player-eth0", file_path = "./my.pcap"):
+def run_tshark(inter = "player-eth0", file_path = "./my.pcap", duration=None):
     """Run tshark command that requires sudo privileges."""
-    cmd = ["tshark", "-i", inter, "-w", file_path]
+    cmd = ["sudo", "tshark", "-i", inter]
+    if duration:
+        cmd += ["-a", f"duration:{duration}"]
+    cmd += ["-w", file_path]
     subprocess.run(cmd, check=True)
     print("Tshark is running ....")
 
@@ -79,9 +82,9 @@ def remove_log_files(result_queue=None):
             subprocess.run(f"rm -f {received_frames}/*", shell=True, check=True)
         
         # Remove specific log files
-        subprocess.run(["rm", "-f", "/home/alireza/mycg/CGReplay/player/logs/my.pcap"], check=True)
-        subprocess.run(["rm", "-f", "/home/alireza/mycg/CGReplay/player/logs/ratelog_CG.txt"], check=True)
-        subprocess.run(["rm", "-f", "/home/alireza/mycg/CGReplay/player/logs/timelog_CG.txt"], check=True)
+        #subprocess.run(["rm", "-f", "/home/alireza/mycg/CGReplay/player/logs/my.pcap"], check=True)
+        #subprocess.run(["rm", "-f", "/home/alireza/mycg/CGReplay/player/logs/ratelog_CG.txt"], check=True)
+        #subprocess.run(["rm", "-f", "/home/alireza/mycg/CGReplay/player/logs/timelog_CG.txt"], check=True)
         
         if result_queue:
             result_queue.put("Log files removed successfully.")
@@ -113,17 +116,32 @@ if __name__ == "__main__":
     
     with open("../config/config.yaml", "r") as file:
         config = yaml.safe_load(file)
-    #if __name__ == "__main__":
-        #with open("../config/config.yaml", "r") as file:
-            #config = yaml.safe_load(file)
 
     NIC = config["gamer"]["player_interface"]
-    pcap_file = config["gamer"]["pcap_file"]
+    # Final PCAP path (host-visible), relative to CGReplay/player by default
+    player_dir = os.path.dirname(os.path.abspath(__file__))
+    final_pcap_cfg = config["gamer"]["pcap_file"]
+    if os.path.isabs(final_pcap_cfg):
+        final_pcap_path = final_pcap_cfg
+    else:
+        final_pcap_path = os.path.abspath(os.path.join(player_dir, final_pcap_cfg))
+
+    # Internal capture path for Mininet: always use /tmp, derived from the final filename
+    pcap_capture_path = os.path.join("/tmp", os.path.basename(final_pcap_path))
+
+    capturing_options = config.get("capturing_options", {})
+    enable_pcap = capturing_options.get("enable_pcap", False)
+    duration = config.get("Running", {}).get("duration")
 
     result_queue = multiprocessing.Queue()
     remove_process = multiprocessing.Process(target=remove_log_files, args=(result_queue,))
     player1_process = multiprocessing.Process(target=run_player1)
-    tshark_process = multiprocessing.Process(target=run_tshark, args=(NIC,pcap_file))
+    tshark_process = None
+    if enable_pcap:
+        tshark_process = multiprocessing.Process(
+            target=run_tshark,
+            args=(NIC, pcap_capture_path, duration),
+        )
 
     print('\n')
     print('+++++++++++++++++++++++++')
@@ -137,7 +155,9 @@ if __name__ == "__main__":
         print("No result from log file removal process.")
 
     player1_process.start()
-    tshark_process.start()
+    if tshark_process is not None:
+        tshark_process.start()
 
     player1_process.join()
-    tshark_process.join()
+    if tshark_process is not None:
+        tshark_process.join()

@@ -18,7 +18,7 @@ filename_prefix: "CG_pcap"  # Prefix pcap filenames
 script_joystick: "./modules/capture_joystick.py"  # Path to joystick capture script
 script_screen: "./modules/capture_screen.py"  # Path to screen capture script
 
-starting_waiting_time: 5 # The time the running script waits to start in the begining!
+starting_waiting_time: 3 # The time the running script waits to start in the begining!
 
 
 # Enable & Disable the Capturing Features

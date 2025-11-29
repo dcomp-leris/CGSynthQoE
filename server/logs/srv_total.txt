@@ -1,1 +1,0 @@
-# Frame ID, Received Frame ID, Gap, Received Time, Send Time, Server FPS, Received FPS, Server CPS, Received CPS, FPS Ratio, CPS Ratio, Bitrate

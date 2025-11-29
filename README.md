@@ -489,6 +489,8 @@ For detailed usage instructions of each quality metrics tool, please refer to th
 - Make sure your input videos/frames have matching dimensions when comparing them
 - The tools are designed to work with common video formats (MP4) and image formats (PNG)
 - For Mininet-based client/server experiments (e.g., `tools/topology_experiment.py`), ensure `xterm` is installed so the server and player terminals can open correctly
+ - When enabling automatic PCAP capture for Mininet experiments via `CGReplay/config/config.yaml` (`capturing_options.enable_pcap: True`), set `gamer.pcap_file` to the **final PCAP location under `CGReplay/player/`** (e.g., `./logs/my.pcap`). Internally, Mininet captures into `/tmp/<filename>.pcap` due to permission constraints and the experiment script automatically copies that `/tmp` file into the configured `gamer.pcap_file` path after the experiment finishes.
+ - Always run `tools/topology_experiment.py` from the `CGReplay/` directory (e.g., `cd CGSynth/CGReplay && sudo python3 ../tools/topology_experiment.py`). Running it from another working directory can cause the `player/` and `server/` folders and relative paths (like `../config/config.yaml`) to be resolved in the wrong place.
 
 ## Troubleshooting
 
