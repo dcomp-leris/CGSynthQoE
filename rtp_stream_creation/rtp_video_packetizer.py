@@ -23,7 +23,7 @@ def read_commands():
     Returns a dictionary mapping frame ID to a list of encrypted commands.
     """
     base_path = Path(__file__).parent
-    sync_file = base_path.parent / "player" / "syncs" / "sync_kombat.txt"
+    sync_file = base_path.parent / "CGReplay" / "player" / "syncs" / "sync_kombat.txt"
     commands = defaultdict(list)
 
     if not sync_file.exists():
@@ -160,7 +160,7 @@ def packetize_nalu(nalu, seq, rtp_timestamp, ssrc, marker, max_payload_size, ipi
 
     return packets, packet_time
 
-
+'''
 def encode_images_to_video(img_dir, codec=DEFAULT_CODEC, fps=30, target_bitrate="5M"):
     """
     Encodes a sequence of PNG images into a video file, then extracts NAL units.
@@ -386,14 +386,207 @@ def encode_images_to_video(img_dir, codec=DEFAULT_CODEC, fps=30, target_bitrate=
     finally:
         if os.path.exists(encoded_path):
             os.remove(encoded_path)           
+'''
+def encode_images_to_video(img_dir, codec=DEFAULT_CODEC, fps=30, target_bitrate="5M"):
+    """
+    Encodes a sequence of PNG images into a video file, then extracts NAL units.
+    Handles missing frame numbers by creating consecutive temporary links.
+    """
+    assert codec in ["h264", "h265"], "Codec must be 'h264' or 'h265'"
+    suffix = "h264" if codec == "h264" else "hevc"
 
+    with tempfile.NamedTemporaryFile(delete=False, suffix=f".{suffix}") as out_file:
+        encoded_path = out_file.name
+
+    temp_dir = None
+    
+    try:
+        # Check if ffmpeg is available
+        try:
+            subprocess.run(["ffmpeg", "-version"], 
+                         stdout=subprocess.DEVNULL, 
+                         stderr=subprocess.DEVNULL, 
+                         check=True)
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            raise RuntimeError("ffmpeg is not installed or not in PATH")
+
+        # Find all PNG files
+        image_files = sorted(img_dir.glob("*.png"))
+        if not image_files:
+            raise RuntimeError(f"No PNG files found in {img_dir}")
+
+        print(f"Found {len(image_files)} PNG files to encode")
+        
+        # ALWAYS use the symlink approach to handle missing frame numbers
+        temp_dir = tempfile.mkdtemp()
+        
+        print(f"Creating temporary consecutive frame links in {temp_dir}")
+        for idx, img_file in enumerate(image_files):
+            link_path = Path(temp_dir) / f"frame_{idx:04d}.png"
+            # Use copy on Windows if symlink fails
+            try:
+                link_path.symlink_to(img_file.absolute())
+            except OSError:
+                # Symlinks may require admin rights on Windows, so copy instead
+                import shutil
+                shutil.copy2(img_file, link_path)
+        
+        cmd = [
+            "ffmpeg", "-y", "-loglevel", "error",
+            "-framerate", str(fps),
+            "-i", str(Path(temp_dir) / "frame_%04d.png"),
+            "-frames:v", str(len(image_files)),
+            "-pix_fmt", "yuv420p",
+            "-c:v", "libx264" if codec == "h264" else "libx265",
+            "-profile:v", "main",
+            "-level", "4.1",
+            "-preset", "veryfast",
+            "-tune", "zerolatency",
+            "-b:v", target_bitrate,
+            "-maxrate", target_bitrate,
+            "-bufsize", "2M",
+            "-g", "60",
+            "-keyint_min", "60",
+            "-sc_threshold", "40",
+            "-bf", "0",
+            "-refs", "1",
+            "-x264opts" if codec == "h264" else "-x265-params",
+            "aud=1",
+            "-bsf:v", "h264_mp4toannexb" if codec == "h264" else "hevc_mp4toannexb",
+            "-f", "rawvideo", encoded_path
+        ]
+
+        print(f"Encoding {len(image_files)} frames as video stream...")
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        if result.returncode != 0:
+            print(f"FFmpeg stderr: {result.stderr}")
+            raise subprocess.CalledProcessError(result.returncode, cmd)
+
+        with open(encoded_path, "rb") as f:
+            data = f.read()
+
+        if not data:
+            raise RuntimeError(f"No data generated from encoding")
+
+        print(f"Encoded video size: {len(data)} bytes")
+
+        # Extract NAL units from the video stream
+        nalus = []
+        i = 0
+        start_codes = [b'\x00\x00\x00\x01', b'\x00\x00\x01']
+
+        while i < len(data):
+            start_code_pos = -1
+            start_code_len = 0
+            
+            for code in start_codes:
+                pos = data.find(code, i)
+                if pos != -1 and (start_code_pos == -1 or pos < start_code_pos):
+                    start_code_pos = pos
+                    start_code_len = len(code)
+            
+            if start_code_pos == -1:
+                break
+                
+            next_start_pos = len(data)
+            for code in start_codes:
+                pos = data.find(code, start_code_pos + start_code_len)
+                if pos != -1 and pos < next_start_pos:
+                    next_start_pos = pos
+            
+            nal_start = start_code_pos + start_code_len
+            nal_end = next_start_pos
+            nal_unit = data[nal_start:nal_end]
+            
+            if nal_unit:
+                nalus.append(nal_unit)
+            
+            i = start_code_pos + start_code_len
+            if i >= next_start_pos:
+                i = next_start_pos
+        
+        # Group NAL units by frame
+        frames_nalus = []
+        current_frame = []
+        sps_pps_nalus = []
+        
+        for idx, nalu in enumerate(nalus):
+            if not nalu:
+                continue
+                
+            if codec == "h264":
+                nal_type = nalu[0] & 0x1F
+                print(f"NAL {idx}: type={nal_type}, size={len(nalu)} bytes")
+                
+                # Collect SPS/PPS separately
+                if nal_type in [7, 8]:  # SPS or PPS
+                    if nalu not in sps_pps_nalus:
+                        sps_pps_nalus.append(nalu)
+                    continue
+                
+                # AUD marks frame boundaries
+                if nal_type == 9:  # AUD
+                    if current_frame:
+                        frames_nalus.append(current_frame)
+                        current_frame = []
+                    continue
+                
+                # Slices and SEI
+                if nal_type in [1, 5, 6]:
+                    current_frame.append(nalu)
+                
+            else:  # h265
+                nal_type = (nalu[0] >> 1) & 0x3F
+                print(f"NAL {idx}: type={nal_type}, size={len(nalu)} bytes")
+                
+                if nal_type in [32, 33, 34]:  # VPS, SPS, PPS
+                    if nalu not in sps_pps_nalus:
+                        sps_pps_nalus.append(nalu)
+                    continue
+                
+                if nal_type == 35:  # AUD
+                    if current_frame:
+                        frames_nalus.append(current_frame)
+                        current_frame = []
+                    continue
+                
+                if nal_type <= 31:  # Slice
+                    current_frame.append(nalu)
+        
+        # Add the last frame
+        if current_frame:
+            frames_nalus.append(current_frame)
+        
+        print(f"Extracted {len(frames_nalus)} frames with {len(sps_pps_nalus)} parameter sets")
+        print(f"Expected {len(image_files)} frames")
+        
+        # Verify frame count
+        if len(frames_nalus) != len(image_files):
+            print(f"WARNING: Frame count mismatch! Expected {len(image_files)}, got {len(frames_nalus)}")
+            print(f"This may indicate an issue with the encoding process.")
+        
+        return sps_pps_nalus, frames_nalus
+    
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"FFmpeg encoding failed: {e}")
+    except Exception as e:
+        raise RuntimeError(f"Error encoding video: {e}")
+    finally:
+        # Clean up temporary directory
+        if temp_dir and os.path.exists(temp_dir):
+            import shutil
+            shutil.rmtree(temp_dir, ignore_errors=True)
+        if os.path.exists(encoded_path):
+            os.remove(encoded_path)
+                   
 
 def create_rtp_packets(codec=DEFAULT_CODEC, 
                       server_ip="192.168.0.10", user_ip="192.168.0.20",
                       server_port=5004, user_port=5004,
                       server_mac="00:11:22:33:44:55", user_mac="66:77:88:99:aa:bb",
                       img_dir=None, ipi_file=None, max_payload_size=1200,
-                      fps=30, target_bitrate="5M"):
+                      fps=30, target_bitrate="5M", game="Fortnite", bandwidth_limit="2Mbit"):
     """
     Reads PNG frames, encodes them as a video stream, and writes RTP packets to PCAP.
     FIXED: Now encodes as proper video with P-frames, sends SPS/PPS only once.
@@ -401,9 +594,11 @@ def create_rtp_packets(codec=DEFAULT_CODEC,
     """
     base_path = Path(__file__).parent.resolve()
     
+    bdwidth_folder = f"{bandwidth_limit}_{game}"
+    
     # Set default paths if not provided
     if img_dir is None:
-        img_dir = base_path.parent / "frame_gen" / "rescaling" / "downscaled_original_frames_from_1920_1080_to_1280_720"
+        img_dir = base_path.parent / "acm_tomm_experiments" / "reference_vs_synth" / game / bdwidth_folder / "received_frames"
     else:
         img_dir = Path(img_dir)
         
@@ -411,8 +606,10 @@ def create_rtp_packets(codec=DEFAULT_CODEC,
         ipi_file = base_path.parent / "rtp_stream_creation" / "all_packets.txt"
     else:
         ipi_file = Path(ipi_file)
+        
     
-    output_pcap = f"rtp_stream_{codec}.pcap"
+    
+    output_pcap = base_path.parent / "rtp_stream_creation" / "result_pcaps" / f"{game}_{bandwidth_limit}_rtp_stream.pcap"
 
     # RTP setup
     ssrc = 12345
@@ -520,7 +717,7 @@ def create_rtp_packets(codec=DEFAULT_CODEC,
     # Write packets to PCAP file
     if all_packets:
         print(f"Writing {len(all_packets)} packets to {output_pcap}")
-        wrpcap(output_pcap, all_packets)
+        wrpcap(str(output_pcap), all_packets)
         print(f"RTP packet stream generation complete. Output: {output_pcap}")
         return True
     else:
@@ -558,38 +755,40 @@ def main():
     
     args = parser.parse_args()
     
-    if args.max_payload_size > MAX_PAYLOAD_SIZE_LIMIT:
-        print(f"Warning: Maximum payload size {args.max_payload_size} exceeds limit of {MAX_PAYLOAD_SIZE_LIMIT}. Using limit instead.")
-        args.max_payload_size = MAX_PAYLOAD_SIZE_LIMIT
-
-    try:
-        success = create_rtp_packets(
-            codec=args.codec,
-            server_ip=args.server_ip,
-            user_ip=args.user_ip,
-            server_port=args.server_port,
-            user_port=args.user_port,
-            server_mac=args.server_mac,
-            user_mac=args.user_mac,
-            img_dir=args.img_dir,
-            ipi_file=args.ipi_file,
-            max_payload_size=args.max_payload_size,
-            fps=args.fps,
-            target_bitrate=args.bitrate
-        )
-        
-        if not success:
-            sys.exit(1)
-            
-    except KeyboardInterrupt:
-        print("\nOperation cancelled by user.")
-        sys.exit(1)
-    except Exception as e:
-        print(f"Unexpected error: {e}")
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
-
+    games = ["Fortnite", "Forza", "Kombat"]
+    bandwidths = ["2Mbit", "4Mbit", "6Mbit", "8Mbit", "10Mbit"]
+    
+    for game in games:
+        for bandwidth in bandwidths:
+            print(f"Generating RTP stream for {game} at {bandwidth}...")
+            try:
+                success = create_rtp_packets(
+                    codec=args.codec,
+                    server_ip=args.server_ip,
+                    user_ip=args.user_ip,
+                    server_port=args.server_port,
+                    user_port=args.user_port,
+                    server_mac=args.server_mac,
+                    user_mac=args.user_mac,
+                    img_dir=args.img_dir,
+                    ipi_file=args.ipi_file,
+                    max_payload_size=args.max_payload_size,
+                    fps=args.fps,
+                    target_bitrate=args.bitrate,
+                    game=game,
+                    bandwidth_limit=bandwidth
+                )
+                
+                if not success:
+                    print(f"Failed to generate RTP stream for {game} at {bandwidth}.")
+            except KeyboardInterrupt:
+                print("\nOperation cancelled by user.")
+                sys.exit(1)
+            except Exception as e:
+                print(f"Unexpected error: {e}")
+                import traceback
+                traceback.print_exc()
+                sys.exit(1)
 
 if __name__ == "__main__":
     main()

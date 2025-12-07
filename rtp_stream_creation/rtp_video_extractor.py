@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 
 
-def extract_rtp_payload(pcap_file, payload_type=96, output_file=None):
+def extract_rtp_payload(pcap_file, payload_type=96, output_file=None, frames_dir="result_frames"):
     """
     Extract RTP payloads from PCAP file and reconstruct the video stream.
     
@@ -214,7 +214,7 @@ def extract_rtp_payload(pcap_file, payload_type=96, output_file=None):
         print(f"Successfully extracted video to: {output_path}")
 
         # NEW: extract PNG frames
-        extract_frames_from_video(output_path)
+        extract_frames_from_video(output_path, frames_dir=frames_dir)
 
         return output_path
         
@@ -260,18 +260,18 @@ def detect_codec(nal_units):
     print("Warning: Could not definitively detect codec, assuming H.264")
     return "h264"
 
-def extract_frames_from_video(video_path, output_dir="result_frames"):
+def extract_frames_from_video(video_path, frames_dir="result_frames"):
     """
     Use ffmpeg to extract raw frames as PNG files.
     
     Args:
         video_path: Path to the decoded video file (MP4 or other)
-        output_dir: Directory name for PNG frame output
+        frames_dir: Directory name for PNG frame output
     """
-    out_dir = Path(output_dir)
+    out_dir = Path(frames_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"Extracting frames from {video_path} into {output_dir}/ ...")
+    print(f"Extracting frames from {video_path} into {frames_dir}/ ...")
 
     cmd = [
         "ffmpeg", "-y",
@@ -306,30 +306,39 @@ Examples:
         """
     )
     
-    parser.add_argument("pcap_file", help="Input PCAP file containing RTP packets")
-    parser.add_argument("-o", "--output", help="Output video file (default: <pcap_name>_extracted.mp4)")
     parser.add_argument("-pt", "--payload-type", type=int, default=96,
                        help="RTP payload type to extract (default: 96)")
     
     args = parser.parse_args()
+    base_path = Path(__file__).parent.resolve()
     
-    try:
-        output_path = extract_rtp_payload(
-            args.pcap_file,
-            payload_type=args.payload_type,
-            output_file=args.output
-        )
-        print(f"\n✓ Video extraction complete!")
-        print(f"  Output: {output_path}")
-        
-    except KeyboardInterrupt:
-        print("\n\nOperation cancelled by user.")
-        sys.exit(1)
-    except Exception as e:
-        print(f"\n✗ Error: {e}", file=sys.stderr)
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
+    games = ["Fortnite", "Forza", "Kombat"]
+    bandwidths = ["2Mbit", "4Mbit", "6Mbit", "8Mbit", "10Mbit"]
+    
+    
+    for game in games:
+        for bw in bandwidths:
+            pcap_filename = base_path.parent / "rtp_stream_creation" / "result_pcaps" / f"{game}_{bw}_rtp_stream.pcap"
+            output = base_path.parent / "rtp_stream_creation" / "result_frames" / f"{game}" / f"{bw}_{game}"
+            video_path = base_path.parent / "rtp_stream_creation" / "result_videos" / f"{game}_{bw}_extracted.mp4"
+            try:
+                output_path = extract_rtp_payload(
+                    str(pcap_filename),
+                    payload_type=args.payload_type,
+                    output_file=str(video_path),
+                    frames_dir=str(output)
+                )
+                print(f"\n✓ Video extraction complete!")
+                print(f"  Output: {output_path}")
+                
+            except KeyboardInterrupt:
+                print("\n\nOperation cancelled by user.")
+                sys.exit(1)
+            except Exception as e:
+                print(f"\n✗ Error: {e}", file=sys.stderr)
+                import traceback
+                traceback.print_exc()
+                sys.exit(1)
 
 
 if __name__ == "__main__":
