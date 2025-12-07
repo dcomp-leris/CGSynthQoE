@@ -17,13 +17,20 @@ MAX_PAYLOAD_SIZE_LIMIT = 1400
 rtp_clock_rate = 90000  # Hz
 
 
-def read_commands():
+def read_commands(game):
     """
     Reads encrypted commands from sync_kombat.txt.
     Returns a dictionary mapping frame ID to a list of encrypted commands.
     """
     base_path = Path(__file__).parent
-    sync_file = base_path.parent / "CGReplay" / "player" / "syncs" / "sync_kombat.txt"
+    if game == "Kombat":
+        sync_file = base_path.parent / "CGReplay" / "player" / "syncs" / "sync_kombat.txt"
+    elif game == "Fortnite":
+        sync_file = base_path.parent / "CGReplay" / "player" / "syncs" / "sync_fortnite.txt"
+    elif game == "Forza":
+        sync_file = base_path.parent / "CGReplay" / "player" / "syncs" / "sync_forza.txt"
+    else:
+        exit(f"Unsupported game for commands: {game}")
     commands = defaultdict(list)
 
     if not sync_file.exists():
@@ -620,7 +627,7 @@ def create_rtp_packets(codec=DEFAULT_CODEC,
     all_packets = []
 
     # Read commands
-    commands = read_commands()
+    commands = read_commands(game)
 
     # Validate paths
     if not img_dir.exists():
