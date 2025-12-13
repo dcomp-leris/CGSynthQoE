@@ -1676,6 +1676,105 @@ def compute_csmooth_from_qoe_logs(experiment_root: str) -> Optional[float]:
     return None
 
 
+def compute_qdelay(rt_ms: float, rt0_ms: float = 50.0, k: float = 0.1) -> float:
+    """Compute response-time quality Q_delay from one-way delay in milliseconds.
+
+    Q_delay = 1 / (1 + exp(k * (RT - RT0))) with output clamped to [0,1].
+    """
+    x = k * (rt_ms - rt0_ms)
+    q = 1.0 / (1.0 + np.exp(x))
+    return float(max(0.0, min(1.0, q)))
+
+
+def compute_qint_from_components(qsync: float, qdelay: float, beta: float = 0.5) -> float:
+    """Compute overall interactivity quality Q_Int from Q_sync and Q_delay.
+
+    Q_Int = beta * Q_delay + (1 - beta) * Q_sync, with beta in [0,1].
+    """
+    beta_clamped = max(0.0, min(1.0, float(beta)))
+    return float(beta_clamped * qdelay + (1.0 - beta_clamped) * qsync)
+
+
+def compute_mean_rt_from_logs(experiment_root: str) -> Optional[float]:
+    """Compute mean one-way response time RT (ms) for a single experiment.
+
+    This uses responsetime_CG.csv found under the experiment's logs/ or
+    logs copy/ directory. Each row contains frame_timestamp and cmd_timestamp,
+    and we define per-sample RT as the absolute timestamp difference:
+
+        RT_i = |frame_timestamp_i - cmd_timestamp_i| * 1000  (milliseconds)
+
+    We then return the mean RT across all samples for that experiment.
+    This *mean RT per experiment* is the scalar used to derive Q_delay and
+    ultimately Q_Int in the interactivity plots.
+    """
+    log_dirs = [
+        os.path.join(experiment_root, "logs copy"),
+        os.path.join(experiment_root, "logs"),
+    ]
+
+    for log_dir in log_dirs:
+        rt_path = os.path.join(log_dir, "responsetime_CG.csv")
+        if not os.path.exists(rt_path):
+            continue
+        try:
+            df = pd.read_csv(rt_path)
+            if "frame_timestamp" not in df.columns or "cmd_timestamp" not in df.columns:
+                print(f"[WARN] RT file missing timestamp columns: {rt_path}")
+                continue
+
+            dt = (df["frame_timestamp"] - df["cmd_timestamp"]).astype(float)
+            rt_ms = (dt.abs() * 1000.0).to_numpy()
+            if rt_ms.size == 0:
+                continue
+            return float(np.mean(rt_ms))
+        except Exception as e:
+            print(f"[WARN] Error reading RT metrics from {rt_path}: {e}")
+            continue
+
+    print(f"[WARN] No valid responsetime_CG.csv found under {experiment_root} for RT computation")
+    return None
+
+
+def compute_mean_video_delay_from_qoe_logs(experiment_root: str) -> Optional[float]:
+    """Compute mean downlink video delay (ms) for a single experiment.
+
+    Uses srv_QoEMetrics.csv under logs copy/ or logs/. For each row we use
+    send_time (server-side send timestamp) and received_time (player-side
+    receive timestamp) and define per-frame downlink delay as:
+
+        delay_i = |received_time_i - send_time_i| * 1000  (milliseconds)
+
+    We then return the mean delay across all frames for that experiment.
+    """
+    log_dirs = [
+        os.path.join(experiment_root, "logs copy"),
+        os.path.join(experiment_root, "logs"),
+    ]
+
+    for log_dir in log_dirs:
+        qoe_path = os.path.join(log_dir, "srv_QoEMetrics.csv")
+        if not os.path.exists(qoe_path):
+            continue
+        try:
+            df = pd.read_csv(qoe_path)
+            if "received_time" not in df.columns or "send_time" not in df.columns:
+                print(f"[WARN] QoE file missing time columns for video delay: {qoe_path}")
+                continue
+
+            dt = (df["received_time"] - df["send_time"]).astype(float)
+            delay_ms = (dt.abs() * 1000.0).to_numpy()
+            if delay_ms.size == 0:
+                continue
+            return float(np.mean(delay_ms))
+        except Exception as e:
+            print(f"[WARN] Error reading video delay metrics from {qoe_path}: {e}")
+            continue
+
+    print(f"[WARN] No valid srv_QoEMetrics.csv found under {experiment_root} for video delay computation")
+    return None
+
+
 def plot_vsmooth_and_loss_real_vs_synth(
     repo_root: str,
     game: str,
@@ -2121,38 +2220,13 @@ def plot_sync_and_loss_real_vs_synth(
     ax1.set_xticks(x)
     ax1.set_xticklabels([f"{val:.0f}" for val in bw])
 
-    # Loss percentage on secondary axis
-    ax2 = ax1.twinx()
-    ax2.set_ylabel("Frame Loss Percentage (%)", fontsize=14)
-    max_loss = float(max(lr.max(initial=0.0), ls.max(initial=0.0), 1.0))
-    ax2.set_ylim(0.0, max_loss * 1.1)
-
-    line_real, = ax2.plot(
-        x,
-        lr,
-        color="black",
-        linestyle="--",
-        marker="^",
-        linewidth=1.2,
-        label="Real Loss",
-    )
-    line_synth, = ax2.plot(
-        x,
-        ls,
-        color="black",
-        linestyle=":",
-        marker="s",
-        linewidth=1.2,
-        label="Synth Loss",
-    )
-
     ax1.set_title(
-        f"Interactivity Sync ($Q_{{sync}}$) and Frame Loss vs. Bandwidth for {game} (Real vs Synth)"
+        f"Interactivity Sync ($Q_{{sync}}$) vs. Bandwidth for {game} (Real vs Synth)"
     )
     ax1.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
 
     # Combine legends from both axes
-    handles = [bars_real, bars_synth, line_real, line_synth]
+    handles = [bars_real, bars_synth]
     labels_legend = [h.get_label() for h in handles]
     ax1.legend(handles, labels_legend, loc="upper left", fontsize=9, framealpha=0.9)
 
@@ -2369,6 +2443,307 @@ def plot_qoe_real_vs_synth(
     fig.savefig(out_path, dpi=150)
     print(f"Saved QoE/LOSS summary plot to: {out_path}")
 
+
+def plot_qint_real_vs_synth(
+    repo_root: str,
+    game: str,
+    bandwidths: List[str],
+    labels: List[str],
+    real_metrics_cache: Dict[tuple, Dict],
+    synth_metrics_cache: Dict[tuple, Dict],
+    beta: float = 0.5,
+) -> None:
+    """Plot interactivity quality Q_Int (0-1) vs bandwidth for Real vs Synth.
+
+    Q_Int is computed per experiment from Q_sync and Q_delay as:
+
+        Q_Int = beta * Q_delay + (1 - beta) * Q_sync
+
+    where Q_sync = (Q_Vsmooth + Q_Csmooth)/2 and Q_delay is derived from the
+    mean one-way RT per experiment (see compute_mean_rt_from_logs).
+    """
+    bw_values: List[float] = []
+    qint_real: List[float] = []
+    qint_synth: List[float] = []
+
+    for bw_base, label in zip(bandwidths, labels):
+        bw_val = parse_bandwidth_from_label(bw_base, label)
+        if bw_val is None:
+            continue
+
+        bitrate_label = f"{bw_base}_{game}"
+
+        # Experiment roots for Real/Synth
+        real_root = os.path.join(
+            repo_root,
+            "acm_tomm_experiments",
+            "reference_vs_real",
+            game,
+            bitrate_label,
+        )
+        synth_root = os.path.join(
+            repo_root,
+            "acm_tomm_experiments",
+            "reference_vs_synth",
+            game,
+            bitrate_label,
+        )
+
+        # Q_sync from Vsmooth/Csmooth
+        real_vsmooth = compute_vsmooth_from_qoe_logs(real_root) if os.path.isdir(real_root) else None
+        real_csmooth = compute_csmooth_from_qoe_logs(real_root) if os.path.isdir(real_root) else None
+        synth_vsmooth = compute_vsmooth_from_qoe_logs(synth_root) if os.path.isdir(synth_root) else None
+        synth_csmooth = compute_csmooth_from_qoe_logs(synth_root) if os.path.isdir(synth_root) else None
+
+        real_qsync = None
+        synth_qsync = None
+        if real_vsmooth is not None and real_csmooth is not None:
+            real_qsync = 0.5 * (real_vsmooth + real_csmooth)
+        if synth_vsmooth is not None and synth_csmooth is not None:
+            synth_qsync = 0.5 * (synth_vsmooth + synth_csmooth)
+
+        # Mean RT and Q_delay
+        real_rt_ms = compute_mean_rt_from_logs(real_root) if os.path.isdir(real_root) else None
+        synth_rt_ms = compute_mean_rt_from_logs(synth_root) if os.path.isdir(synth_root) else None
+
+        real_qdelay = compute_qdelay(real_rt_ms) if real_rt_ms is not None else None
+        synth_qdelay = compute_qdelay(synth_rt_ms) if synth_rt_ms is not None else None
+
+        # Combine into Q_Int for Real/Synth when possible
+        real_qint = None
+        synth_qint = None
+        if real_qsync is not None and real_qdelay is not None:
+            real_qint = compute_qint_from_components(real_qsync, real_qdelay, beta)
+        if synth_qsync is not None and synth_qdelay is not None:
+            synth_qint = compute_qint_from_components(synth_qsync, synth_qdelay, beta)
+
+        if real_qint is None and synth_qint is None:
+            continue
+
+        bw_values.append(bw_val)
+        qint_real.append(real_qint if real_qint is not None else 0.0)
+        qint_synth.append(synth_qint if synth_qint is not None else 0.0)
+
+        # Console summary per bandwidth
+        if real_rt_ms is not None or synth_rt_ms is not None:
+            print(
+                f"{label}: Q_Int_real={real_qint if real_qint is not None else float('nan'):.3f}, "
+                f"Q_Int_synth={synth_qint if synth_qint is not None else float('nan'):.3f}, "
+                f"RT_real_mean={real_rt_ms if real_rt_ms is not None else float('nan'):.1f} ms, "
+                f"RT_synth_mean={synth_rt_ms if synth_rt_ms is not None else float('nan'):.1f} ms"
+            )
+
+    if not bw_values:
+        print(f"[WARN] No Q_Int data available for {game}, skipping interactivity quality plot.")
+        return
+
+    bw = np.array(bw_values, dtype=float)
+    qint_r = np.array(qint_real, dtype=float)
+    qint_s = np.array(qint_synth, dtype=float)
+
+    order = np.argsort(bw)
+    bw = bw[order]
+    qint_r = qint_r[order]
+    qint_s = qint_s[order]
+
+    x = np.arange(len(bw))
+    bar_width = 0.35
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.set_xlabel("Bandwidth (Mbps)", fontsize=14)
+    ax.set_ylabel(r"Interactivity Quality ($Q_{Int}$, 0-1)", fontsize=14)
+    ax.set_ylim(0.0, 1.0)
+
+    bars_real = ax.bar(
+        x - bar_width / 2,
+        qint_r,
+        width=bar_width,
+        color="white",
+        edgecolor="black",
+        linewidth=1.0,
+        hatch=HATCHES[1],
+        label="Real $Q_{Int}$",
+    )
+    bars_synth = ax.bar(
+        x + bar_width / 2,
+        qint_s,
+        width=bar_width,
+        color="gray",
+        edgecolor="black",
+        linewidth=1.0,
+        hatch=HATCHES[2],
+        label="Synth $Q_{Int}$",
+    )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels([f"{val:.0f}" for val in bw])
+    ax.set_title(f"Interactivity Quality ($Q_{{Int}}$) vs. Bandwidth for {game} (Real vs Synth)")
+    ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
+
+    handles = [bars_real, bars_synth]
+    labels_legend = [h.get_label() for h in handles]
+    ax.legend(handles, labels_legend, loc="upper left", fontsize=9, framealpha=0.9)
+
+    fig.tight_layout()
+
+    graph_dir = os.path.join(repo_root, "acm_tomm_experiments", "graphs")
+    os.makedirs(graph_dir, exist_ok=True)
+    safe_game = game.replace(" ", "_")
+    safe_bits = "_".join(bandwidths).replace("/", "_")
+    out_name = f"qint_bandwidth_summary_{safe_game}_{safe_bits}_real_vs_synth_beta{beta:.2f}.pdf"
+    out_path = os.path.join(graph_dir, out_name)
+    fig.savefig(out_path, dpi=150)
+    print(f"Saved Q_Int summary plot to: {out_path}")
+
+
+def plot_delay_and_rt_real_vs_synth(
+    repo_root: str,
+    game: str,
+    bandwidths: List[str],
+    labels: List[str],
+    real_metrics_cache: Dict[tuple, Dict],
+    synth_metrics_cache: Dict[tuple, Dict],
+) -> None:
+    """Plot downlink video delay and response time (RT) vs bandwidth for Real vs Synth.
+
+    - Downlink video delay is the mean |received_time - send_time| from srv_QoEMetrics.csv.
+    - RT is the mean command-to-frame response time from responsetime_CG.csv.
+
+    One figure per game, with Real/Synth curves across bandwidths.
+    """
+    bw_values: List[float] = []
+    delay_real: List[float] = []
+    delay_synth: List[float] = []
+    rt_real: List[float] = []
+    rt_synth: List[float] = []
+
+    for bw_base, label in zip(bandwidths, labels):
+        bw_val = parse_bandwidth_from_label(bw_base, label)
+        if bw_val is None:
+            continue
+
+        bitrate_label = f"{bw_base}_{game}"
+
+        real_root = os.path.join(
+            repo_root,
+            "acm_tomm_experiments",
+            "reference_vs_real",
+            game,
+            bitrate_label,
+        )
+        synth_root = os.path.join(
+            repo_root,
+            "acm_tomm_experiments",
+            "reference_vs_synth",
+            game,
+            bitrate_label,
+        )
+
+        # Mean downlink video delay
+        real_delay_ms = compute_mean_video_delay_from_qoe_logs(real_root) if os.path.isdir(real_root) else None
+        synth_delay_ms = compute_mean_video_delay_from_qoe_logs(synth_root) if os.path.isdir(synth_root) else None
+
+        # Mean RT (command->frame)
+        real_rt_ms = compute_mean_rt_from_logs(real_root) if os.path.isdir(real_root) else None
+        synth_rt_ms = compute_mean_rt_from_logs(synth_root) if os.path.isdir(synth_root) else None
+
+        if all(v is None for v in (real_delay_ms, synth_delay_ms, real_rt_ms, synth_rt_ms)):
+            continue
+
+        bw_values.append(bw_val)
+        delay_real.append(real_delay_ms if real_delay_ms is not None else 0.0)
+        delay_synth.append(synth_delay_ms if synth_delay_ms is not None else 0.0)
+        rt_real.append(real_rt_ms if real_rt_ms is not None else 0.0)
+        rt_synth.append(synth_rt_ms if synth_rt_ms is not None else 0.0)
+
+        print(
+            f"{label} ({game}): Delay_real={real_delay_ms if real_delay_ms is not None else float('nan'):.1f} ms, "
+            f"Delay_synth={synth_delay_ms if synth_delay_ms is not None else float('nan'):.1f} ms, "
+            f"RT_real={real_rt_ms if real_rt_ms is not None else float('nan'):.1f} ms, "
+            f"RT_synth={synth_rt_ms if synth_rt_ms is not None else float('nan'):.1f} ms"
+        )
+
+    if not bw_values:
+        print(f"[WARN] No delay/RT data available for {game}, skipping delay+RT plot.")
+        return
+
+    bw = np.array(bw_values, dtype=float)
+    d_r = np.array(delay_real, dtype=float)
+    d_s = np.array(delay_synth, dtype=float)
+    rt_r = np.array(rt_real, dtype=float)
+    rt_s = np.array(rt_synth, dtype=float)
+
+    order = np.argsort(bw)
+    bw = bw[order]
+    d_r = d_r[order]
+    d_s = d_s[order]
+    rt_r = rt_r[order]
+    rt_s = rt_s[order]
+
+    x = np.arange(len(bw))
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.set_xlabel("Bandwidth (Mbps)", fontsize=14)
+    ax.set_ylabel("Delay / Response Time (ms)", fontsize=14)
+
+    line_dr, = ax.plot(
+        x,
+        d_r,
+        color="black",
+        linestyle="-",
+        marker="o",
+        linewidth=1.5,
+        label="Real Video Delay",
+    )
+    line_ds, = ax.plot(
+        x,
+        d_s,
+        color="gray",
+        linestyle="-",
+        marker="o",
+        linewidth=1.5,
+        label="Synth Video Delay",
+    )
+    line_rt_r, = ax.plot(
+        x,
+        rt_r,
+        color="black",
+        linestyle="--",
+        marker="^",
+        linewidth=1.5,
+        label="Real RT",
+    )
+    line_rt_s, = ax.plot(
+        x,
+        rt_s,
+        color="gray",
+        linestyle="--",
+        marker="s",
+        linewidth=1.5,
+        label="Synth RT",
+    )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels([f"{val:.0f}" for val in bw])
+    ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
+    ax.set_title(f"Downlink Video Delay and Response Time vs. Bandwidth for {game} (Real vs Synth)")
+
+    handles = [line_dr, line_ds, line_rt_r, line_rt_s]
+    labels_legend = [h.get_label() for h in handles]
+    ax.legend(handles, labels_legend, loc="upper left", fontsize=9, framealpha=0.9)
+
+    fig.tight_layout()
+
+    graph_dir = os.path.join(repo_root, "acm_tomm_experiments", "graphs")
+    os.makedirs(graph_dir, exist_ok=True)
+    safe_game = game.replace(" ", "_")
+    safe_bits = "_".join(bandwidths).replace("/", "_")
+    out_name = f"delay_rt_bandwidth_summary_{safe_game}_{safe_bits}_real_vs_synth.pdf"
+    out_path = os.path.join(graph_dir, out_name)
+    fig.savefig(out_path, dpi=150)
+    print(f"Saved Delay+RT summary plot to: {out_path}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Per-frame VMAF scatterplot for CGSynth experiments")
     parser.add_argument(
@@ -2538,6 +2913,23 @@ def main() -> None:
                         synth_metrics_cache=synth_cache,
                     )
                     plot_sync_and_loss_real_vs_synth(
+                        repo_root=repo_root,
+                        game=game,
+                        bandwidths=args.bandwidths,
+                        labels=labels,
+                        real_metrics_cache=real_cache,
+                        synth_metrics_cache=synth_cache,
+                    )
+                    plot_qint_real_vs_synth(
+                        repo_root=repo_root,
+                        game=game,
+                        bandwidths=args.bandwidths,
+                        labels=labels,
+                        real_metrics_cache=real_cache,
+                        synth_metrics_cache=synth_cache,
+                        beta=0.5,
+                    )
+                    plot_delay_and_rt_real_vs_synth(
                         repo_root=repo_root,
                         game=game,
                         bandwidths=args.bandwidths,
