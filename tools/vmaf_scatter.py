@@ -37,8 +37,17 @@ except ImportError:
     print("[WARN] torch/lpips not installed. LPIPS will be 0.0. Install with: pip install torch lpips")
 
 # Style constants matched to user preference
-COLORS = ['#ffffff', '#d9d9d9', '#9c9c9c', '#2f2f2f']
-HATCHES = ['/', '\\', '.', 'x']
+COLORS = [
+    '#ffffff',
+    '#e6e6e6',
+    '#cccccc',
+    '#b3b3b3',
+    '#999999',
+    '#808080',
+    '#4d4d4d',
+    '#1a1a1a',
+]
+HATCHES = ['/', '\\', '|', '-', '+', 'x', 'o', 'O', '.', '*']
 
 
 def parse_bandwidth_from_logs(bitrate_label: str, dst_folder: str) -> Optional[float]:
@@ -537,7 +546,7 @@ def compare_multiple_destinations(
         if ref_count > 0:
             loss_rate = missing / ref_count
             loss_pct = loss_rate * 100.0
-            legend_label = f"{label} (avg={avg_vmaf:.2f}, loss={loss_pct:.1f}%)"
+            legend_label = f"{label} (avg={avg_vmaf:.2f})"
             print(f"{label}: avg VMAF={avg_vmaf:.2f}, frame loss={missing}/{ref_count} ({loss_pct:.2f}%)")
 
             # Store aggregate stats for bandwidth summary plot
@@ -580,7 +589,6 @@ def compare_multiple_destinations(
 
     plt.xlabel("Frame Number")
     plt.ylabel("VMAF Score")
-    plt.title(f"VMAF Scatterplot for {game} Experiments")
     plt.grid(True, alpha=0.3)
 
     # Place legend above the axes, with limited columns, so it stays inside the figure
@@ -589,7 +597,7 @@ def compare_multiple_destinations(
         loc="upper center",
         bbox_to_anchor=(0.5, 1.18),
         ncol=legend_cols,
-        fontsize=9,
+        fontsize=10,
     )
     # Leave some space at the top for the legend
     plt.tight_layout(rect=[0, 0, 1, 0.9])
@@ -635,69 +643,40 @@ def plot_bandwidth_summary(
 
     bw = np.array(bandwidths, dtype=float)
     vmaf = np.array(avg_vmafs, dtype=float)
-    loss = np.array(loss_pcts, dtype=float)
 
     # Remove "BW: " prefix from labels if present
     clean_labels = [l.replace("BW: ", "") for l in labels]
 
     fig, ax1 = plt.subplots(figsize=(10, 6))
     color_vmaf = COLORS[1]
-    color_loss = COLORS[3]
 
     # Average VMAF: bars with thick border
-    ax1.set_xlabel("Bandwidth (Mbps)", fontsize=14)
-    ax1.set_ylabel("Average VMAF", color="black", fontsize=14)
-    ax1.set_ylabel("VMAF Score (0-100)", color="black", fontsize=14)
+    ax1.set_xlabel("Bandwidth (Mbps)", fontsize=15)
+    ax1.set_ylabel("Average VMAF", color="black", fontsize=15)
+    ax1.set_ylabel("VMAF Score (0-100)", color="black", fontsize=15)
     ax1.tick_params(axis="y", labelcolor="black")
 
     # VMAF bars: one bar per bandwidth on the left Y-axis with thick border
     bar_width = 0.6
-    for bw_val, vmaf_val, label in zip(bw, vmaf, clean_labels):
+    for i, (bw_val, vmaf_val, label) in enumerate(zip(bw, vmaf, clean_labels)):
         ax1.bar(
             bw_val,
             vmaf_val,
             width=bar_width,
-            color=color_vmaf,
+            color=COLORS[i % len(COLORS)],
             alpha=1.0,
             edgecolor="black",
             linewidth=1,
-            hatch=HATCHES[1],
+            hatch=HATCHES[i % len(HATCHES)],
             label=f"{label} VMAF",
         )
 
-    ax2 = ax1.twinx()
-    ax2.set_ylabel("Frame Loss Percentage (%)", color="black", fontsize=14)
-    ax2.tick_params(axis="y", labelcolor="black")
-
-    # Frame loss scatter: dark markers at each bandwidth, with connecting dashed line
-    ax2.scatter(
-        bw,
-        loss,
-        color=color_loss,
-        marker="^",
-        s=70,
-        label="Frame Loss Percentage",
-        zorder=10
-    )
-    ax2.plot(
-        bw,
-        loss,
-        color=color_loss,
-        linestyle="--",
-        linewidth=1.2,
-        zorder=10
-    )
-
-    ax1.set_title(f"VMAF and Frame Loss vs. Bandwidth for {game}")
-
-    # Combine legends from both axes and place inside the plot area
     handles1, labels1 = ax1.get_legend_handles_labels()
-    handles2, labels2 = ax2.get_legend_handles_labels()
     ax1.legend(
-        handles1 + handles2,
-        labels1 + labels2,
+        handles1,
+        labels1,
         loc="upper left",
-        fontsize=9,
+        fontsize=10,
         framealpha=0.9,
     )
 
@@ -812,10 +791,9 @@ def compare_bandwidth_across_games(
     fig, ax1 = plt.subplots(figsize=(12, 6))
 
     color_vmaf = "black"
-    color_loss = COLORS[3]
 
-    ax1.set_xlabel("Bandwidth (Mbps)", fontsize=14)
-    ax1.set_ylabel("VMAF Score (0-100)", color="black", fontsize=14)
+    ax1.set_xlabel("Bandwidth (Mbps)", fontsize=15)
+    ax1.set_ylabel("VMAF Score (0-100)", color="black", fontsize=15)
     ax1.tick_params(axis="y", labelcolor="black")
 
     # Grouped bars (one per game per bandwidth), differentiated by hatch
@@ -846,46 +824,12 @@ def compare_bandwidth_across_games(
             label=f"{stats['game']} VMAF",
         )
 
-    ax2 = ax1.twinx()
-    ax2.set_ylabel("Frame Loss Percentage (%)", color="black", fontsize=14)
-    ax2.tick_params(axis="y", labelcolor="black")
-
-    # Frame loss: dark markers + dashed line per game, with small horizontal offset per game
-    for gi, stats in enumerate(per_game_stats):
-        valid = ~np.isnan(loss_mat[gi])
-        if not np.any(valid):
-            continue
-        # Small offset to avoid overlapping loss series
-        offset = -group_width / 2 + bar_width / 2 + gi * bar_width
-        ax2.scatter(
-            all_bw[valid] + offset,
-            loss_mat[gi, valid],
-            color=color_loss,
-            marker=markers[gi % len(markers)],
-            s=70,
-            label=f"{stats['game']} Loss",
-            zorder=10
-        )
-        # Connect the offset points with a dashed line
-        ax2.plot(
-            all_bw[valid] + offset,
-            loss_mat[gi, valid],
-            color=color_loss,
-            linestyle="--",
-            linewidth=1.0,
-            alpha=0.9,
-            zorder=10
-        )
-
-    ax1.set_title("VMAF and Frame Loss vs. Bandwidth (multiple games)")
-
     handles1, labels1 = ax1.get_legend_handles_labels()
-    handles2, labels2 = ax2.get_legend_handles_labels()
     ax1.legend(
-        handles1 + handles2,
-        labels1 + labels2,
+        handles1,
+        labels1,
         loc="upper left",
-        fontsize=9,
+        fontsize=10,
         framealpha=0.9,
     )
 
@@ -1007,10 +951,9 @@ def compare_multiple_destinations_from_cache(
             plt.text(last_idx, last_vmaf, label, fontsize=10, ha='left', va='bottom',
                     bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='black', alpha=0.9))
 
-    plt.xlabel("Frame Number", fontsize=19)
-    plt.ylabel("VMAF Score", fontsize=19)
-    plt.title(f"Per-Frame VMAF for {game} Experiments", fontsize=16)
-    plt.tick_params(axis='both', labelsize=14)
+    plt.xlabel("Frame Number", fontsize=20)
+    plt.ylabel("VMAF Score", fontsize=20)
+    plt.tick_params(axis='both', labelsize=15)
     plt.grid(True, linestyle='--', linewidth=0.7, alpha=0.7)
     plt.xlim(0, total_frames)
     plt.ylim(0, 100)
@@ -1130,14 +1073,13 @@ def compare_bandwidth_across_games_from_cache(
             plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 1,
                     f'{vmaf:.1f}', ha='center', va='bottom', fontsize=9)
 
-    plt.xlabel("Bandwidth (Mbps)", fontsize=19)
-    plt.ylabel("Average VMAF Score", fontsize=19)
-    plt.title(f"VMAF vs Bandwidth Across Games", fontsize=16)
+    plt.xlabel("Bandwidth (Mbps)", fontsize=20)
+    plt.ylabel("Average VMAF Score", fontsize=20)
     plt.xticks(x_positions + bar_width * len(per_game_stats) / 2, 
-               [f'{bw:.1f}' for bw in sorted_bandwidths], fontsize=14)
-    plt.tick_params(axis='both', labelsize=14)
+               [f'{bw:.1f}' for bw in sorted_bandwidths], fontsize=15)
+    plt.tick_params(axis='both', labelsize=15)
     plt.grid(True, linestyle='--', linewidth=0.7, alpha=0.7)
-    plt.legend(fontsize=12)
+    plt.legend(fontsize=13)
     plt.ylim(0, 100)
 
     plt.tight_layout()
@@ -1222,14 +1164,13 @@ def plot_all_metrics_summary(
                          edgecolor='black', linewidth=0.9,
                          color=COLORS[i % len(COLORS)], hatch=HATCHES[i % len(HATCHES)])
         
-        ax.set_xlabel("Bandwidth (Mbps)", fontsize=12)
-        ax.set_ylabel(metric_label, fontsize=12)
-        ax.set_title(f"{metric_label} vs Bandwidth", fontsize=14)
+        ax.set_xlabel("Bandwidth (Mbps)", fontsize=13)
+        ax.set_ylabel(metric_label, fontsize=13)
         ax.set_xticks(x_positions + bar_width * len(games) / 2)
         ax.set_xticklabels([f'{bw:.0f}' for bw in sorted_bandwidths])
         ax.set_ylim(ylim)
         ax.grid(True, linestyle='--', linewidth=0.5, alpha=0.7)
-        ax.legend(fontsize=9)
+        ax.legend(fontsize=10)
     
     plt.tight_layout()
     
@@ -1339,14 +1280,13 @@ def plot_all_metrics_summary_both(
                 hatch=HATCHES[si % len(HATCHES)],
             )
 
-        ax.set_xlabel("Bandwidth (Mbps)", fontsize=12)
-        ax.set_ylabel(metric_label, fontsize=12)
-        ax.set_title(f"{metric_label} vs Bandwidth (Real vs Synth)", fontsize=14)
+        ax.set_xlabel("Bandwidth (Mbps)", fontsize=13)
+        ax.set_ylabel(metric_label, fontsize=13)
         ax.set_xticks(x_positions + bar_width * n_series / 2)
         ax.set_xticklabels([f"{bw:.0f}" for bw in sorted_bandwidths])
         ax.set_ylim(ylim)
         ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
-        ax.legend(fontsize=8)
+        ax.legend(fontsize=9)
 
     plt.tight_layout()
 
@@ -1463,9 +1403,8 @@ def plot_all_metrics_summary_both_split(
                 hatch=HATCHES[si % len(HATCHES)],
             )
 
-        ax.set_xlabel("Bandwidth (Mbps)", fontsize=12)
-        ax.set_ylabel(metric_label, fontsize=12)
-        ax.set_title(f"{metric_label} vs Bandwidth (Real vs Synth)", fontsize=14)
+        ax.set_xlabel("Bandwidth (Mbps)", fontsize=13)
+        ax.set_ylabel(metric_label, fontsize=13)
         ax.set_xticks(x_positions + bar_width * n_series / 2)
         ax.set_xticklabels([f"{bw:.0f}" for bw in sorted_bandwidths])
 
@@ -1487,7 +1426,7 @@ def plot_all_metrics_summary_both_split(
 
         ax.set_ylim(lower, upper)
         ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
-        ax.legend(fontsize=8)
+        ax.legend(fontsize=9)
 
         fig.tight_layout()
 
@@ -1585,14 +1524,13 @@ def plot_qvideo_summary_real_vs_synth(
             hatch=HATCHES[si % len(HATCHES)],
         )
 
-    ax.set_xlabel("Bandwidth (Mbps)", fontsize=14)
-    ax.set_ylabel(r"Video Quality ($Q_{video}$)", fontsize=14)
-    ax.set_title("Real vs Synth Video Quality vs Bandwidth", fontsize=16)
+    ax.set_xlabel("Bandwidth (Mbps)", fontsize=15)
+    ax.set_ylabel(r"Video Quality ($Q_{video}$)", fontsize=15)
     ax.set_xticks(x_positions + bar_width * n_series / 2)
     ax.set_xticklabels([f"{bw:.0f}" for bw in sorted_bandwidths])
     ax.set_ylim(0.0, 1.0)
     ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
-    ax.legend(fontsize=9)
+    ax.legend(fontsize=10)
 
     fig.tight_layout()
 
@@ -1879,8 +1817,8 @@ def plot_vsmooth_and_loss_real_vs_synth(
     fig, ax1 = plt.subplots(figsize=(10, 6))
 
     # Vsmooth bars (0-1)
-    ax1.set_xlabel("Bandwidth (Mbps)", fontsize=14)
-    ax1.set_ylabel(r"$Q_{Vsmooth}$ (0-1)", fontsize=14)
+    ax1.set_xlabel("Bandwidth (Mbps)", fontsize=15)
+    ax1.set_ylabel(r"$Q_{Vsmooth}$ (0-1)", fontsize=15)
     ax1.set_ylim(0.0, 1.0)
 
     bars_real = ax1.bar(
@@ -1906,39 +1844,12 @@ def plot_vsmooth_and_loss_real_vs_synth(
 
     ax1.set_xticks(x)
     ax1.set_xticklabels([f"{val:.0f}" for val in bw])
-
-    # Loss percentage on secondary axis
-    ax2 = ax1.twinx()
-    ax2.set_ylabel("Frame Loss Percentage (%)", fontsize=14)
-    max_loss = float(max(lr.max(initial=0.0), ls.max(initial=0.0), 1.0))
-    ax2.set_ylim(0.0, max_loss * 1.1)
-
-    line_real, = ax2.plot(
-        x,
-        lr,
-        color="black",
-        linestyle="--",
-        marker="^",
-        linewidth=1.2,
-        label="Real Loss",
-    )
-    line_synth, = ax2.plot(
-        x,
-        ls,
-        color="black",
-        linestyle=":",
-        marker="s",
-        linewidth=1.2,
-        label="Synth Loss",
-    )
-
-    ax1.set_title(f"Vsmooth and Frame Loss vs. Bandwidth for {game} (Real vs Synth)")
     ax1.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
 
     # Combine legends from both axes
-    handles = [bars_real, bars_synth, line_real, line_synth]
+    handles = [bars_real, bars_synth]
     labels_legend = [h.get_label() for h in handles]
-    ax1.legend(handles, labels_legend, loc="upper left", fontsize=9, framealpha=0.9)
+    ax1.legend(handles, labels_legend, loc="upper left", fontsize=10, framealpha=0.9)
 
     fig.tight_layout()
 
@@ -2063,9 +1974,8 @@ def plot_vsmooth_per_game_real_vs_synth(
         label="Synth",
     )
 
-    ax.set_xlabel("Game", fontsize=14)
-    ax.set_ylabel(r"Video Smoothness ($Q_{Vsmooth}$)", fontsize=14)
-    ax.set_title("Real vs Synth Average Video Smoothness per Game", fontsize=16)
+    ax.set_xlabel("Game", fontsize=15)
+    ax.set_ylabel(r"Video Smoothness ($Q_{Vsmooth}$)", fontsize=15)
     ax.set_xticks(x)
     ax.set_xticklabels(game_labels)
     ax.set_ylim(0.0, 1.0)
@@ -2192,8 +2102,8 @@ def plot_sync_and_loss_real_vs_synth(
 
     fig, ax1 = plt.subplots(figsize=(10, 6))
 
-    ax1.set_xlabel("Bandwidth (Mbps)", fontsize=14)
-    ax1.set_ylabel(r"$Q_{sync}$ (0-1)", fontsize=14)
+    ax1.set_xlabel("Bandwidth (Mbps)", fontsize=15)
+    ax1.set_ylabel(r"$Q_{sync}$ (0-1)", fontsize=15)
     ax1.set_ylim(0.0, 1.0)
 
     bars_real = ax1.bar(
@@ -2219,10 +2129,6 @@ def plot_sync_and_loss_real_vs_synth(
 
     ax1.set_xticks(x)
     ax1.set_xticklabels([f"{val:.0f}" for val in bw])
-
-    ax1.set_title(
-        f"Interactivity Sync ($Q_{{sync}}$) vs. Bandwidth for {game} (Real vs Synth)"
-    )
     ax1.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
 
     # Combine legends from both axes
@@ -2371,8 +2277,8 @@ def plot_qoe_real_vs_synth(
 
     fig, ax1 = plt.subplots(figsize=(10, 6))
 
-    ax1.set_xlabel("Bandwidth (Mbps)", fontsize=14)
-    ax1.set_ylabel("Perceived QoE Score (0-1)", fontsize=14)
+    ax1.set_xlabel("Bandwidth (Mbps)", fontsize=15)
+    ax1.set_ylabel("Perceived QoE Score (0-1)", fontsize=15)
     ax1.set_ylim(0.0, 1.0)
 
     bars_real = ax1.bar(
@@ -2398,37 +2304,10 @@ def plot_qoe_real_vs_synth(
 
     ax1.set_xticks(x)
     ax1.set_xticklabels([f"{val:.0f}" for val in bw])
-
-    # Loss percentage on secondary axis
-    ax2 = ax1.twinx()
-    ax2.set_ylabel("Frame Loss Percentage (%)", fontsize=14)
-    max_loss = float(max(lr.max(initial=0.0), ls.max(initial=0.0), 1.0))
-    ax2.set_ylim(0.0, max_loss * 1.1)
-
-    line_real, = ax2.plot(
-        x,
-        lr,
-        color="black",
-        linestyle="--",
-        marker="^",
-        linewidth=1.2,
-        label="Real Loss",
-    )
-    line_synth, = ax2.plot(
-        x,
-        ls,
-        color="black",
-        linestyle=":",
-        marker="s",
-        linewidth=1.2,
-        label="Synth Loss",
-    )
-
-    ax1.set_title(f"Overall QoE (0-1) and Frame Loss vs. Bandwidth for {game} (Real vs Synth)")
     ax1.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
 
     # Combine legends from both axes
-    handles = [bars_real, bars_synth, line_real, line_synth]
+    handles = [bars_real, bars_synth]
     labels_legend = [h.get_label() for h in handles]
     ax1.legend(handles, labels_legend, loc="upper left", fontsize=9, framealpha=0.9)
 
@@ -2550,8 +2429,8 @@ def plot_qint_real_vs_synth(
     bar_width = 0.35
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    ax.set_xlabel("Bandwidth (Mbps)", fontsize=14)
-    ax.set_ylabel(r"Interactivity Quality ($Q_{Int}$, 0-1)", fontsize=14)
+    ax.set_xlabel("Bandwidth (Mbps)", fontsize=15)
+    ax.set_ylabel(r"Interactivity Quality ($Q_{Int}$, 0-1)", fontsize=15)
     ax.set_ylim(0.0, 1.0)
 
     bars_real = ax.bar(
@@ -2577,12 +2456,11 @@ def plot_qint_real_vs_synth(
 
     ax.set_xticks(x)
     ax.set_xticklabels([f"{val:.0f}" for val in bw])
-    ax.set_title(f"Interactivity Quality ($Q_{{Int}}$) vs. Bandwidth for {game} (Real vs Synth)")
     ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
 
     handles = [bars_real, bars_synth]
     labels_legend = [h.get_label() for h in handles]
-    ax.legend(handles, labels_legend, loc="upper left", fontsize=9, framealpha=0.9)
+    ax.legend(handles, labels_legend, loc="upper left", fontsize=10, framealpha=0.9)
 
     fig.tight_layout()
 
@@ -2683,8 +2561,8 @@ def plot_delay_and_rt_real_vs_synth(
     x = np.arange(len(bw))
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    ax.set_xlabel("Bandwidth (Mbps)", fontsize=14)
-    ax.set_ylabel("Delay / Response Time (ms)", fontsize=14)
+    ax.set_xlabel("Bandwidth (Mbps)", fontsize=15)
+    ax.set_ylabel("Delay / Response Time (ms)", fontsize=15)
 
     line_dr, = ax.plot(
         x,
@@ -2726,7 +2604,6 @@ def plot_delay_and_rt_real_vs_synth(
     ax.set_xticks(x)
     ax.set_xticklabels([f"{val:.0f}" for val in bw])
     ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
-    ax.set_title(f"Downlink Video Delay and Response Time vs. Bandwidth for {game} (Real vs Synth)")
 
     handles = [line_dr, line_ds, line_rt_r, line_rt_s]
     labels_legend = [h.get_label() for h in handles]
@@ -2779,13 +2656,13 @@ def main() -> None:
     )
     parser.add_argument(
         "--experiment-type",
-        choices=["real", "synth", "both"],
-        default="real",
+        choices=["real", "synth", "both", "all"],
+        default="all",
         help=(
             "Type of ACM TOMM experiment to plot when using --skip-collection: "
-            "'real' (reference_vs_real), 'synth' (reference_vs_synth), or 'both' "
-            "(run plots for both real and synth). For on-the-fly collection this "
-            "option is ignored and 'real' is assumed."
+            "'real' (reference_vs_real), 'synth' (reference_vs_synth), 'both' "
+            "(combined Real vs Synth plots only), or 'all' (real + synth + combined). "
+            "For on-the-fly collection this option is ignored and 'real' is assumed."
         ),
     )
 
@@ -2855,128 +2732,140 @@ def main() -> None:
 
     if args.skip_collection:
         # Use pre-computed metrics from CSVs. Prefer ACM TOMM processed_data files if present.
-        if args.experiment_type != "both":
-            exp = args.experiment_type
-            if exp == "real":
-                csv_path = csv_path_real if os.path.exists(csv_path_real) else csv_path_default
-            else:  # exp == "synth"
-                csv_path = csv_path_synth
 
-            if not os.path.exists(csv_path):
-                print(f"[ERROR] No cache file found for experiment-type '{exp}' at {csv_path}. Cannot skip collection.")
-                sys.exit(1)
-
-            metrics_cache = load_metrics_cache(csv_path)
-            print(f"[INFO] Loaded existing metrics cache for '{exp}' from {csv_path}")
-            suffix = f"_{exp}"
-            run_plots_for_cache(metrics_cache, suffix)
-        else:
-            # 'both': load real and synth caches once, run VMAF plots for each, then Vsmooth overlay.
-            real_cache: Dict[tuple, Dict] = {}
-            synth_cache: Dict[tuple, Dict] = {}
-
-            # Real cache
+        def load_real_cache() -> Dict[tuple, Dict]:
             csv_real = csv_path_real if os.path.exists(csv_path_real) else csv_path_default
-            if os.path.exists(csv_real):
-                real_cache = load_metrics_cache(csv_real)
-                print(f"[INFO] Loaded existing metrics cache for 'real' from {csv_real}")
-                run_plots_for_cache(real_cache, "_real")
-            else:
-                print(f"[WARN] No cache file found for experiment-type 'real' at {csv_real}, skipping real plots.")
+            if not os.path.exists(csv_real):
+                return {}
+            print(f"[INFO] Loaded existing metrics cache for 'real' from {csv_real}")
+            return load_metrics_cache(csv_real)
 
-            # Synth cache
-            if os.path.exists(csv_path_synth):
-                synth_cache = load_metrics_cache(csv_path_synth)
-                print(f"[INFO] Loaded existing metrics cache for 'synth' from {csv_path_synth}")
-                run_plots_for_cache(synth_cache, "_synth")
-            else:
-                print(f"[WARN] No cache file found for experiment-type 'synth' at {csv_path_synth}, skipping synth plots.")
+        def load_synth_cache() -> Dict[tuple, Dict]:
+            if not os.path.exists(csv_path_synth):
+                return {}
+            print(f"[INFO] Loaded existing metrics cache for 'synth' from {csv_path_synth}")
+            return load_metrics_cache(csv_path_synth)
 
-            # Vsmooth + loss, QoE, and interactivity sync Real vs Synth, per game
-            if real_cache or synth_cache:
-                all_games = [base_game] + list(extra_games) if extra_games else [base_game]
-                for game in all_games:
-                    plot_vsmooth_and_loss_real_vs_synth(
-                        repo_root=repo_root,
-                        game=game,
-                        bandwidths=args.bandwidths,
-                        labels=labels,
-                        real_metrics_cache=real_cache,
-                        synth_metrics_cache=synth_cache,
-                    )
-                    plot_qoe_real_vs_synth(
-                        repo_root=repo_root,
-                        game=game,
-                        bandwidths=args.bandwidths,
-                        labels=labels,
-                        real_metrics_cache=real_cache,
-                        synth_metrics_cache=synth_cache,
-                    )
-                    plot_sync_and_loss_real_vs_synth(
-                        repo_root=repo_root,
-                        game=game,
-                        bandwidths=args.bandwidths,
-                        labels=labels,
-                        real_metrics_cache=real_cache,
-                        synth_metrics_cache=synth_cache,
-                    )
-                    plot_qint_real_vs_synth(
-                        repo_root=repo_root,
-                        game=game,
-                        bandwidths=args.bandwidths,
-                        labels=labels,
-                        real_metrics_cache=real_cache,
-                        synth_metrics_cache=synth_cache,
-                        beta=0.5,
-                    )
-                    plot_delay_and_rt_real_vs_synth(
-                        repo_root=repo_root,
-                        game=game,
-                        bandwidths=args.bandwidths,
-                        labels=labels,
-                        real_metrics_cache=real_cache,
-                        synth_metrics_cache=synth_cache,
-                    )
+        def run_combined_plots(real_cache: Dict[tuple, Dict], synth_cache: Dict[tuple, Dict]) -> None:
+            if not (real_cache and synth_cache):
+                print("[WARN] Need both real and synth caches for combined plots; skipping combined plots.")
+                return
 
-                # Average Q_Vsmooth per game (Real vs Synth)
-                plot_vsmooth_per_game_real_vs_synth(
+            all_games = [base_game] + list(extra_games) if extra_games else [base_game]
+            for game in all_games:
+                plot_vsmooth_and_loss_real_vs_synth(
                     repo_root=repo_root,
-                    games=all_games,
+                    game=game,
+                    bandwidths=args.bandwidths,
+                    labels=labels,
+                    real_metrics_cache=real_cache,
+                    synth_metrics_cache=synth_cache,
+                )
+                plot_qoe_real_vs_synth(
+                    repo_root=repo_root,
+                    game=game,
+                    bandwidths=args.bandwidths,
+                    labels=labels,
+                    real_metrics_cache=real_cache,
+                    synth_metrics_cache=synth_cache,
+                )
+                plot_sync_and_loss_real_vs_synth(
+                    repo_root=repo_root,
+                    game=game,
+                    bandwidths=args.bandwidths,
+                    labels=labels,
+                    real_metrics_cache=real_cache,
+                    synth_metrics_cache=synth_cache,
+                )
+                plot_qint_real_vs_synth(
+                    repo_root=repo_root,
+                    game=game,
+                    bandwidths=args.bandwidths,
+                    labels=labels,
+                    real_metrics_cache=real_cache,
+                    synth_metrics_cache=synth_cache,
+                    beta=0.5,
+                )
+                plot_delay_and_rt_real_vs_synth(
+                    repo_root=repo_root,
+                    game=game,
                     bandwidths=args.bandwidths,
                     labels=labels,
                     real_metrics_cache=real_cache,
                     synth_metrics_cache=synth_cache,
                 )
 
-                # Combined all-metrics summary (VMAF, PSNR, SSIM, LPIPS) for real vs synth
-                plot_all_metrics_summary_both(
-                    repo_root=repo_root,
-                    games=all_games,
-                    bandwidths=args.bandwidths,
-                    labels=labels,
-                    real_cache=real_cache,
-                    synth_cache=synth_cache,
-                )
+            plot_vsmooth_per_game_real_vs_synth(
+                repo_root=repo_root,
+                games=all_games,
+                bandwidths=args.bandwidths,
+                labels=labels,
+                real_metrics_cache=real_cache,
+                synth_metrics_cache=synth_cache,
+            )
 
-                # Real vs Synth Video Quality (Q_video) vs Bandwidth across games
-                plot_qvideo_summary_real_vs_synth(
-                    repo_root=repo_root,
-                    games=all_games,
-                    bandwidths=args.bandwidths,
-                    labels=labels,
-                    real_cache=real_cache,
-                    synth_cache=synth_cache,
-                )
+            plot_all_metrics_summary_both(
+                repo_root=repo_root,
+                games=all_games,
+                bandwidths=args.bandwidths,
+                labels=labels,
+                real_cache=real_cache,
+                synth_cache=synth_cache,
+            )
 
-                # Split Real vs Synth summaries: one figure per metric
-                plot_all_metrics_summary_both_split(
-                    repo_root=repo_root,
-                    games=all_games,
-                    bandwidths=args.bandwidths,
-                    labels=labels,
-                    real_cache=real_cache,
-                    synth_cache=synth_cache,
-                )
+            plot_qvideo_summary_real_vs_synth(
+                repo_root=repo_root,
+                games=all_games,
+                bandwidths=args.bandwidths,
+                labels=labels,
+                real_cache=real_cache,
+                synth_cache=synth_cache,
+            )
+
+            plot_all_metrics_summary_both_split(
+                repo_root=repo_root,
+                games=all_games,
+                bandwidths=args.bandwidths,
+                labels=labels,
+                real_cache=real_cache,
+                synth_cache=synth_cache,
+            )
+
+        if args.experiment_type == "real":
+            csv_real = csv_path_real if os.path.exists(csv_path_real) else csv_path_default
+            if not os.path.exists(csv_real):
+                print(f"[ERROR] No cache file found for experiment-type 'real' at {csv_real}. Cannot skip collection.")
+                sys.exit(1)
+            metrics_cache = load_real_cache()
+            run_plots_for_cache(metrics_cache, "_real")
+        elif args.experiment_type == "synth":
+            if not os.path.exists(csv_path_synth):
+                print(f"[ERROR] No cache file found for experiment-type 'synth' at {csv_path_synth}. Cannot skip collection.")
+                sys.exit(1)
+            metrics_cache = load_synth_cache()
+            run_plots_for_cache(metrics_cache, "_synth")
+        elif args.experiment_type == "both":
+            # Combined Real vs Synth plots only.
+            real_cache = load_real_cache()
+            synth_cache = load_synth_cache()
+            run_combined_plots(real_cache, synth_cache)
+        else:  # args.experiment_type == "all"
+            # Real-only + Synth-only + combined Real vs Synth plots.
+            real_cache = load_real_cache()
+            synth_cache = load_synth_cache()
+
+            if real_cache:
+                run_plots_for_cache(real_cache, "_real")
+            else:
+                csv_real = csv_path_real if os.path.exists(csv_path_real) else csv_path_default
+                print(f"[WARN] No cache file found for experiment-type 'real' at {csv_real}, skipping real plots.")
+
+            if synth_cache:
+                run_plots_for_cache(synth_cache, "_synth")
+            else:
+                print(f"[WARN] No cache file found for experiment-type 'synth' at {csv_path_synth}, skipping synth plots.")
+
+            run_combined_plots(real_cache, synth_cache)
     else:
         # Phase 1: Collect VMAF data and populate cache directly from frames.
         # This path corresponds to the 'real' (reference_vs_real) experiments.
