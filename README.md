@@ -7,8 +7,9 @@
 [![CGReplay](https://img.shields.io/badge/CGReplay-Repository-green)](https://github.com/dcomp-leris/CGReplay.git)
 [![Paper](https://img.shields.io/badge/Paper-Zenodo-red)](https://zenodo.org/records/16968173)
 [![Demonstration](https://img.shields.io/badge/Sigcomm2025-Demonstration-blue)](https://conferences.sigcomm.org/sigcomm/2025/papers-posters-demos-info/)
-[![ACM](https://img.shields.io/badge/Paper-ACM-red)](
-https://dl.acm.org/doi/10.1145/3744969.3748445)
+[![ACM](https://img.shields.io/badge/Paper-ACM-red)](https://dl.acm.org/doi/10.1145/3744969.3748445)
+[![ACM](https://img.shields.io/badge/Video-CGSynth-blue)](https://drive.google.com/file/d/1LrWFbQx8SufftGh4FA4Pdk6-v_bhxG9B/view?usp=drive_link)
+
 
 *For more details, please refer to the Wiki page of this repository.*
 
