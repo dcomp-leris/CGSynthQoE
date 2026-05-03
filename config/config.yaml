@@ -1,0 +1,7 @@
+server:
+  server_IP: 127.0.0.1
+  server_port: 5000
+
+gamer:
+  player_IP: 127.0.0.1
+  player_streaming_port: 5002
