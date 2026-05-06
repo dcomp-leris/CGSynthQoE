@@ -1,0 +1,707 @@
+Relatório de Análise VisQUIC
+Data: qua 06 mai 2026 15:51:34 -03
+======================================
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_jobs_/https:__www.youtube.com_jobs_-00430_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_jobs_/https:__www.youtube.com_jobs_-00430_quic_anonymized_filtered.pcap...
+✅ 83 pacotes carregados
+   Pacotes UDP: 83
+   Pacotes QUIC (porta 443): 83
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 83
+   Total bytes: 50,252 (49.07 KB)
+   Duração: 1.46s
+   Tamanho médio pacote: 605 bytes
+   IPI médio: 17.81ms
+   RTT estimado: 0.00ms
+   Bitrate: 0.28 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_jobs_/https:__www.youtube.com_jobs_-00520_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_jobs_/https:__www.youtube.com_jobs_-00520_quic_anonymized_filtered.pcap...
+✅ 73 pacotes carregados
+   Pacotes UDP: 73
+   Pacotes QUIC (porta 443): 73
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 73
+   Total bytes: 47,621 (46.50 KB)
+   Duração: 0.44s
+   Tamanho médio pacote: 652 bytes
+   IPI médio: 6.17ms
+   RTT estimado: 0.00ms
+   Bitrate: 0.86 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_jobs_/https:__www.youtube.com_jobs_-00330_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_jobs_/https:__www.youtube.com_jobs_-00330_quic_anonymized_filtered.pcap...
+✅ 76 pacotes carregados
+   Pacotes UDP: 76
+   Pacotes QUIC (porta 443): 76
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 76
+   Total bytes: 47,735 (46.62 KB)
+   Duração: 1.35s
+   Tamanho médio pacote: 628 bytes
+   IPI médio: 18.05ms
+   RTT estimado: 0.00ms
+   Bitrate: 0.28 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_jobs_/https:__www.youtube.com_jobs_-00720_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_jobs_/https:__www.youtube.com_jobs_-00720_quic_anonymized_filtered.pcap...
+✅ 76 pacotes carregados
+   Pacotes UDP: 76
+   Pacotes QUIC (porta 443): 76
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 76
+   Total bytes: 47,949 (46.83 KB)
+   Duração: 1.22s
+   Tamanho médio pacote: 631 bytes
+   IPI médio: 16.22ms
+   RTT estimado: 0.00ms
+   Bitrate: 0.32 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_jobs_/https:__www.youtube.com_jobs_-00250_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_jobs_/https:__www.youtube.com_jobs_-00250_quic_anonymized_filtered.pcap...
+✅ 94 pacotes carregados
+   Pacotes UDP: 94
+   Pacotes QUIC (porta 443): 94
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 94
+   Total bytes: 51,479 (50.27 KB)
+   Duração: 1.17s
+   Tamanho médio pacote: 548 bytes
+   IPI médio: 12.61ms
+   RTT estimado: 0.00ms
+   Bitrate: 0.35 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_jobs_/https:__www.youtube.com_jobs_-00440_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_jobs_/https:__www.youtube.com_jobs_-00440_quic_anonymized_filtered.pcap...
+✅ 89 pacotes carregados
+   Pacotes UDP: 89
+   Pacotes QUIC (porta 443): 89
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 89
+   Total bytes: 50,838 (49.65 KB)
+   Duração: 1.18s
+   Tamanho médio pacote: 571 bytes
+   IPI médio: 13.45ms
+   RTT estimado: 0.00ms
+   Bitrate: 0.34 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_jobs_/https:__www.youtube.com_jobs_-00490_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_jobs_/https:__www.youtube.com_jobs_-00490_quic_anonymized_filtered.pcap...
+✅ 73 pacotes carregados
+   Pacotes UDP: 73
+   Pacotes QUIC (porta 443): 73
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 73
+   Total bytes: 47,577 (46.46 KB)
+   Duração: 1.48s
+   Tamanho médio pacote: 652 bytes
+   IPI médio: 20.52ms
+   RTT estimado: 0.00ms
+   Bitrate: 0.26 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_jobs_/https:__www.youtube.com_jobs_-00670_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_jobs_/https:__www.youtube.com_jobs_-00670_quic_anonymized_filtered.pcap...
+✅ 73 pacotes carregados
+   Pacotes UDP: 73
+   Pacotes QUIC (porta 443): 73
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 73
+   Total bytes: 49,187 (48.03 KB)
+   Duração: 1.40s
+   Tamanho médio pacote: 674 bytes
+   IPI médio: 19.46ms
+   RTT estimado: 0.00ms
+   Bitrate: 0.28 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_-00780_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_-00780_quic_anonymized_filtered.pcap...
+✅ 1076 pacotes carregados
+   Pacotes UDP: 1076
+   Pacotes QUIC (porta 443): 1076
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 1076
+   Total bytes: 1,156,849 (1129.74 KB)
+   Duração: 0.85s
+   Tamanho médio pacote: 1075 bytes
+   IPI médio: 0.79ms
+   RTT estimado: 0.00ms
+   Bitrate: 10.91 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_-00250_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_-00250_quic_anonymized_filtered.pcap...
+✅ 1071 pacotes carregados
+   Pacotes UDP: 1071
+   Pacotes QUIC (porta 443): 1071
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 1071
+   Total bytes: 1,150,830 (1123.86 KB)
+   Duração: 0.86s
+   Tamanho médio pacote: 1075 bytes
+   IPI médio: 0.81ms
+   RTT estimado: 0.00ms
+   Bitrate: 10.67 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_-00440_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_-00440_quic_anonymized_filtered.pcap...
+✅ 1072 pacotes carregados
+   Pacotes UDP: 1072
+   Pacotes QUIC (porta 443): 1072
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 1072
+   Total bytes: 1,155,788 (1128.70 KB)
+   Duração: 0.89s
+   Tamanho médio pacote: 1078 bytes
+   IPI médio: 0.83ms
+   RTT estimado: 0.00ms
+   Bitrate: 10.39 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_-00330_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_-00330_quic_anonymized_filtered.pcap...
+✅ 1075 pacotes carregados
+   Pacotes UDP: 1075
+   Pacotes QUIC (porta 443): 1075
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 1075
+   Total bytes: 1,155,001 (1127.93 KB)
+   Duração: 1.24s
+   Tamanho médio pacote: 1074 bytes
+   IPI médio: 1.16ms
+   RTT estimado: 0.00ms
+   Bitrate: 7.44 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_-00720_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_-00720_quic_anonymized_filtered.pcap...
+✅ 1069 pacotes carregados
+   Pacotes UDP: 1069
+   Pacotes QUIC (porta 443): 1069
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 1069
+   Total bytes: 1,153,797 (1126.75 KB)
+   Duração: 0.87s
+   Tamanho médio pacote: 1079 bytes
+   IPI médio: 0.81ms
+   RTT estimado: 0.00ms
+   Bitrate: 10.63 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_-00490_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_-00490_quic_anonymized_filtered.pcap...
+✅ 1084 pacotes carregados
+   Pacotes UDP: 1084
+   Pacotes QUIC (porta 443): 1084
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 1084
+   Total bytes: 1,156,772 (1129.66 KB)
+   Duração: 0.95s
+   Tamanho médio pacote: 1067 bytes
+   IPI médio: 0.87ms
+   RTT estimado: 0.00ms
+   Bitrate: 9.78 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_-00670_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_-00670_quic_anonymized_filtered.pcap...
+✅ 1077 pacotes carregados
+   Pacotes UDP: 1077
+   Pacotes QUIC (porta 443): 1077
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 1077
+   Total bytes: 1,155,263 (1128.19 KB)
+   Duração: 0.80s
+   Tamanho médio pacote: 1073 bytes
+   IPI médio: 0.74ms
+   RTT estimado: 0.00ms
+   Bitrate: 11.60 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_-00430_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_-00430_quic_anonymized_filtered.pcap...
+✅ 1066 pacotes carregados
+   Pacotes UDP: 1066
+   Pacotes QUIC (porta 443): 1066
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 1066
+   Total bytes: 1,153,841 (1126.80 KB)
+   Duração: 0.86s
+   Tamanho médio pacote: 1082 bytes
+   IPI médio: 0.81ms
+   RTT estimado: 0.00ms
+   Bitrate: 10.73 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_-00520_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/youtube.com/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_/https:__www.youtube.com_howyoutubeworks_resources_brand-resources_-00520_quic_anonymized_filtered.pcap...
+✅ 1076 pacotes carregados
+   Pacotes UDP: 1076
+   Pacotes QUIC (porta 443): 1076
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 1076
+   Total bytes: 1,157,423 (1130.30 KB)
+   Duração: 0.85s
+   Tamanho médio pacote: 1076 bytes
+   IPI médio: 0.79ms
+   RTT estimado: 0.00ms
+   Bitrate: 10.88 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_kb_931-integrations/https:__www.semrush.com_kb_931-integrations-00500_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_kb_931-integrations/https:__www.semrush.com_kb_931-integrations-00500_quic_anonymized_filtered.pcap...
+✅ 534 pacotes carregados
+   Pacotes UDP: 534
+   Pacotes QUIC (porta 443): 534
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 534
+   Total bytes: 400,260 (390.88 KB)
+   Duração: 1.12s
+   Tamanho médio pacote: 750 bytes
+   IPI médio: 2.11ms
+   RTT estimado: 0.00ms
+   Bitrate: 2.85 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_kb_931-integrations/https:__www.semrush.com_kb_931-integrations-00490_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_kb_931-integrations/https:__www.semrush.com_kb_931-integrations-00490_quic_anonymized_filtered.pcap...
+✅ 551 pacotes carregados
+   Pacotes UDP: 551
+   Pacotes QUIC (porta 443): 551
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 551
+   Total bytes: 410,524 (400.90 KB)
+   Duração: 1.01s
+   Tamanho médio pacote: 745 bytes
+   IPI médio: 1.85ms
+   RTT estimado: 0.00ms
+   Bitrate: 3.24 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_kb_931-integrations/https:__www.semrush.com_kb_931-integrations-00250_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_kb_931-integrations/https:__www.semrush.com_kb_931-integrations-00250_quic_anonymized_filtered.pcap...
+✅ 531 pacotes carregados
+   Pacotes UDP: 531
+   Pacotes QUIC (porta 443): 531
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 531
+   Total bytes: 397,456 (388.14 KB)
+   Duração: 1.19s
+   Tamanho médio pacote: 749 bytes
+   IPI médio: 2.24ms
+   RTT estimado: 0.00ms
+   Bitrate: 2.67 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_kb_931-integrations/https:__www.semrush.com_kb_931-integrations-00550_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_kb_931-integrations/https:__www.semrush.com_kb_931-integrations-00550_quic_anonymized_filtered.pcap...
+✅ 521 pacotes carregados
+   Pacotes UDP: 521
+   Pacotes QUIC (porta 443): 521
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 521
+   Total bytes: 388,127 (379.03 KB)
+   Duração: 1.07s
+   Tamanho médio pacote: 745 bytes
+   IPI médio: 2.05ms
+   RTT estimado: 0.00ms
+   Bitrate: 2.91 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_kb_931-integrations/https:__www.semrush.com_kb_931-integrations-00330_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_kb_931-integrations/https:__www.semrush.com_kb_931-integrations-00330_quic_anonymized_filtered.pcap...
+✅ 540 pacotes carregados
+   Pacotes UDP: 540
+   Pacotes QUIC (porta 443): 540
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 540
+   Total bytes: 389,440 (380.31 KB)
+   Duração: 1.08s
+   Tamanho médio pacote: 721 bytes
+   IPI médio: 2.00ms
+   RTT estimado: 0.00ms
+   Bitrate: 2.90 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_kb_931-integrations/https:__www.semrush.com_kb_931-integrations-00280_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_kb_931-integrations/https:__www.semrush.com_kb_931-integrations-00280_quic_anonymized_filtered.pcap...
+✅ 512 pacotes carregados
+   Pacotes UDP: 512
+   Pacotes QUIC (porta 443): 512
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 512
+   Total bytes: 390,992 (381.83 KB)
+   Duração: 2.54s
+   Tamanho médio pacote: 764 bytes
+   IPI médio: 4.97ms
+   RTT estimado: 0.00ms
+   Bitrate: 1.23 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_kb_931-integrations/https:__www.semrush.com_kb_931-integrations-00510_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_kb_931-integrations/https:__www.semrush.com_kb_931-integrations-00510_quic_anonymized_filtered.pcap...
+✅ 542 pacotes carregados
+   Pacotes UDP: 542
+   Pacotes QUIC (porta 443): 542
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 542
+   Total bytes: 402,547 (393.11 KB)
+   Duração: 1.01s
+   Tamanho médio pacote: 743 bytes
+   IPI médio: 1.87ms
+   RTT estimado: 0.00ms
+   Bitrate: 3.18 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_kb_931-integrations/https:__www.semrush.com_kb_931-integrations-00430_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_kb_931-integrations/https:__www.semrush.com_kb_931-integrations-00430_quic_anonymized_filtered.pcap...
+✅ 543 pacotes carregados
+   Pacotes UDP: 543
+   Pacotes QUIC (porta 443): 543
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 543
+   Total bytes: 411,498 (401.85 KB)
+   Duração: 2.49s
+   Tamanho médio pacote: 758 bytes
+   IPI médio: 4.59ms
+   RTT estimado: 0.00ms
+   Bitrate: 1.32 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_kb_931-integrations/https:__www.semrush.com_kb_931-integrations-00760_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_kb_931-integrations/https:__www.semrush.com_kb_931-integrations-00760_quic_anonymized_filtered.pcap...
+✅ 592 pacotes carregados
+   Pacotes UDP: 592
+   Pacotes QUIC (porta 443): 592
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 592
+   Total bytes: 425,644 (415.67 KB)
+   Duração: 1.22s
+   Tamanho médio pacote: 719 bytes
+   IPI médio: 2.06ms
+   RTT estimado: 0.00ms
+   Bitrate: 2.80 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_kb_931-integrations/https:__www.semrush.com_kb_931-integrations-00420_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_kb_931-integrations/https:__www.semrush.com_kb_931-integrations-00420_quic_anonymized_filtered.pcap...
+✅ 542 pacotes carregados
+   Pacotes UDP: 542
+   Pacotes QUIC (porta 443): 542
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 542
+   Total bytes: 396,031 (386.75 KB)
+   Duração: 2.61s
+   Tamanho médio pacote: 731 bytes
+   IPI médio: 4.82ms
+   RTT estimado: 0.00ms
+   Bitrate: 1.22 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_features_link-building_/https:__www.semrush.com_features_link-building_-00280_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_features_link-building_/https:__www.semrush.com_features_link-building_-00280_quic_anonymized_filtered.pcap...
+✅ 242 pacotes carregados
+   Pacotes UDP: 242
+   Pacotes QUIC (porta 443): 242
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 242
+   Total bytes: 142,305 (138.97 KB)
+   Duração: 1.91s
+   Tamanho médio pacote: 588 bytes
+   IPI médio: 7.94ms
+   RTT estimado: 0.00ms
+   Bitrate: 0.59 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_features_link-building_/https:__www.semrush.com_features_link-building_-00760_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_features_link-building_/https:__www.semrush.com_features_link-building_-00760_quic_anonymized_filtered.pcap...
+✅ 233 pacotes carregados
+   Pacotes UDP: 233
+   Pacotes QUIC (porta 443): 233
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 233
+   Total bytes: 137,281 (134.06 KB)
+   Duração: 1.07s
+   Tamanho médio pacote: 589 bytes
+   IPI médio: 4.61ms
+   RTT estimado: 0.00ms
+   Bitrate: 1.03 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_features_link-building_/https:__www.semrush.com_features_link-building_-00500_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_features_link-building_/https:__www.semrush.com_features_link-building_-00500_quic_anonymized_filtered.pcap...
+✅ 323 pacotes carregados
+   Pacotes UDP: 323
+   Pacotes QUIC (porta 443): 323
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 323
+   Total bytes: 207,832 (202.96 KB)
+   Duração: 3.21s
+   Tamanho médio pacote: 643 bytes
+   IPI médio: 9.97ms
+   RTT estimado: 0.00ms
+   Bitrate: 0.52 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_features_link-building_/https:__www.semrush.com_features_link-building_-00510_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_features_link-building_/https:__www.semrush.com_features_link-building_-00510_quic_anonymized_filtered.pcap...
+✅ 231 pacotes carregados
+   Pacotes UDP: 231
+   Pacotes QUIC (porta 443): 231
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 231
+   Total bytes: 137,117 (133.90 KB)
+   Duração: 1.34s
+   Tamanho médio pacote: 594 bytes
+   IPI médio: 5.81ms
+   RTT estimado: 0.00ms
+   Bitrate: 0.82 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_features_link-building_/https:__www.semrush.com_features_link-building_-00490_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_features_link-building_/https:__www.semrush.com_features_link-building_-00490_quic_anonymized_filtered.pcap...
+✅ 239 pacotes carregados
+   Pacotes UDP: 239
+   Pacotes QUIC (porta 443): 239
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 239
+   Total bytes: 137,908 (134.68 KB)
+   Duração: 1.10s
+   Tamanho médio pacote: 577 bytes
+   IPI médio: 4.63ms
+   RTT estimado: 0.00ms
+   Bitrate: 1.00 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_features_link-building_/https:__www.semrush.com_features_link-building_-00250_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_features_link-building_/https:__www.semrush.com_features_link-building_-00250_quic_anonymized_filtered.pcap...
+✅ 248 pacotes carregados
+   Pacotes UDP: 248
+   Pacotes QUIC (porta 443): 248
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 248
+   Total bytes: 145,304 (141.90 KB)
+   Duração: 3.08s
+   Tamanho médio pacote: 586 bytes
+   IPI médio: 12.46ms
+   RTT estimado: 0.00ms
+   Bitrate: 0.38 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_features_link-building_/https:__www.semrush.com_features_link-building_-00430_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_features_link-building_/https:__www.semrush.com_features_link-building_-00430_quic_anonymized_filtered.pcap...
+✅ 241 pacotes carregados
+   Pacotes UDP: 241
+   Pacotes QUIC (porta 443): 241
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 241
+   Total bytes: 135,593 (132.42 KB)
+   Duração: 1.27s
+   Tamanho médio pacote: 563 bytes
+   IPI médio: 5.29ms
+   RTT estimado: 0.00ms
+   Bitrate: 0.85 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_features_link-building_/https:__www.semrush.com_features_link-building_-00550_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_features_link-building_/https:__www.semrush.com_features_link-building_-00550_quic_anonymized_filtered.pcap...
+✅ 320 pacotes carregados
+   Pacotes UDP: 320
+   Pacotes QUIC (porta 443): 320
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 320
+   Total bytes: 200,100 (195.41 KB)
+   Duração: 1.12s
+   Tamanho médio pacote: 625 bytes
+   IPI médio: 3.53ms
+   RTT estimado: 0.00ms
+   Bitrate: 1.42 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_features_link-building_/https:__www.semrush.com_features_link-building_-00420_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_features_link-building_/https:__www.semrush.com_features_link-building_-00420_quic_anonymized_filtered.pcap...
+✅ 242 pacotes carregados
+   Pacotes UDP: 242
+   Pacotes QUIC (porta 443): 242
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 242
+   Total bytes: 143,468 (140.11 KB)
+   Duração: 2.75s
+   Tamanho médio pacote: 593 bytes
+   IPI médio: 11.42ms
+   RTT estimado: 0.00ms
+   Bitrate: 0.42 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
+================================
+Arquivo: datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_features_link-building_/https:__www.semrush.com_features_link-building_-00330_quic_anonymized_filtered.pcap
+================================
+📊 Analisando datasets/VisQUIC/dataset-samples/VisQUIC/semrush.com/https:__www.semrush.com_features_link-building_/https:__www.semrush.com_features_link-building_-00330_quic_anonymized_filtered.pcap...
+✅ 223 pacotes carregados
+   Pacotes UDP: 223
+   Pacotes QUIC (porta 443): 223
+
+📊 MÉTRICAS:
+   Total pacotes QUIC: 223
+   Total bytes: 135,581 (132.40 KB)
+   Duração: 1.12s
+   Tamanho médio pacote: 608 bytes
+   IPI médio: 5.04ms
+   RTT estimado: 0.00ms
+   Bitrate: 0.97 Mbps
+
+🌐 Qualidade de rede: EXCELENTE
+
