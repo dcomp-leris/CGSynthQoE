@@ -1,6 +1,6 @@
 # CGReplay — QUIC Transport Integration
 
-**LERIS/UFSCar · Hugo Guilherme · May 2026**
+**LERIS/UFSCar · Hugo Guilherme · Meeting: June 3, 2026**
 
 ---
 

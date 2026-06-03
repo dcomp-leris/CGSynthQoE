@@ -214,3 +214,6 @@ frame_gen/**/*.MKV
 CGReplay/player/received_frames/
 CGReplay/player/logs/
 CGReplay/server/logs/
+
+# Private speaker notes (Hugo's personal meeting scripts — never commit)
+CGReplay/SPEAKER_NOTES.md
