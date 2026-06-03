@@ -5,16 +5,10 @@
 # This is Configured for Netsoft 2025 Conference!
 '''
 
-import os , sys, time, socket, select, subprocess, cv2, qrcode, gi, hashlib, yaml 
+import os , sys, time, socket, select, subprocess, cv2, qrcode, hashlib, yaml
 import numpy as np, pandas as pd
 
-
 os.sched_setaffinity(0, {0})
-gi.require_version('Gst', '1.0')
-
-from gi.repository import Gst
-# Initialize GStreamer
-Gst.init(None)
 
 # Load configuration from YAML file
 with open("../config/config.yaml", "r") as file:
@@ -89,6 +83,7 @@ myrtp = config["encoding"][MyvideoEncoder]["packetization"]
 # Loading Protocols Setup **************************************************************************************
 scream_state=config["protocols"]["SCReAM"]                      # CCA Protocol for UDP as SCReAM developed by Ericsson!
 scream_sender=config["protocols"]["sender"]                     # Sender as CGServer!
+quic_state  =config["protocols"].get("QUIC", False)            # QUIC transport (replaces RTP when True)
 
 
 # Loading Sync Setup *******************************************************************************************
@@ -206,6 +201,11 @@ def setup_socket():
 received_fame_id = 0
 
 def stream_frames(game_name):
+    import gi
+    gi.require_version('Gst', '1.0')
+    from gi.repository import Gst
+    Gst.init(None)
+
     global bitrate
     # setup Encoding H.264
     bitrate = config["encoding"]["starting_bitrate"]
@@ -544,11 +544,13 @@ def load_config(file_path="config.txt"):
     return config
 
 if __name__ == "__main__":
-    #subprocess.run(["rm", "-f", "/home/alireza/mycg/CGReplay/server/logs/*"], check=True)
-    #print("All logs were removed in the beginning!")
-    # Load configurations from the config.txt file
-    # Call the stream_frames function
     print(f'Started streaming to {cg_server_port}... ')
-    stream_frames(game_name)
+    if quic_state:
+        from quic_sender import main as quic_main
+        import asyncio
+        print("[CGReplay] QUIC transport selected — delegating to quic_sender")
+        asyncio.run(quic_main())
+    else:
+        stream_frames(game_name)
 
     

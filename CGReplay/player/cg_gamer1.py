@@ -102,8 +102,20 @@ myrtp = config["encoding"][MyvideoEncoder]["Depacketization"]
 
 
 # Scream enable or disable
-scream_state=config["protocols"]["SCReAM"]   
+scream_state=config["protocols"]["SCReAM"]
 scream_receiver=config["protocols"]["receiver"]
+quic_state  =config["protocols"].get("QUIC", False)  # QUIC transport (replaces RTP when True)
+
+# QUIC path — exit before display thread and GStreamer setup; cv2/Qt crashes inside Mininet without DISPLAY
+if quic_state:
+    subprocess.run("../port_clean.sh")
+    with open("/tmp/player_ready", "w") as f:
+        f.write("ready")
+    from quic_receiver import main as quic_main
+    import asyncio
+    print("[CGReplay] QUIC transport selected — delegating to quic_receiver", flush=True)
+    asyncio.run(quic_main())
+    raise SystemExit(0)
 
 # Custom function to load autocommands.txt while handling the complex 'command' field
 def load_syncfile(file_path):
@@ -229,7 +241,7 @@ def read_qr_code_from_frame(frame):
 
 if scream_state==False:
     # GStreamer pipeline to receive video stream from port 5000
-    
+
     gstreamer_pipeline = (
          f"udpsrc port={player_port} ! application/x-rtp, payload=96 ! "
         f"queue max-size-time=1000000000 ! {myrtp} ! {mydecoder} ! videoconvert ! appsink"

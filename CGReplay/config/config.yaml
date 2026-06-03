@@ -103,6 +103,11 @@ protocols:
     SCReAM: False # False = 0 / True = 1
     sender: "../scream/scream/gstscream/scripts/sender.sh"
     receiver: "../scream/scream/gstscream/scripts/receiver.sh"
+    # QUIC transport (used by quic_sender.py / quic_receiver.py)
+    QUIC: True
+    quic_port: 4433
+    quic_cert: "../../rtp_stream_creation/server.pem"
+    quic_key:  "../../rtp_stream_creation/server.key"
 
 capturing_options:
     enable_pcap: True
