@@ -52,7 +52,8 @@ PCAP_DEST   = os.path.join(PLAYER_DIR, "output.pcap")
 # SUDO_USER contains the original username; fall back to 'hugo' if not set.
 _REAL_USER = os.environ.get("SUDO_USER", "hugo")
 _USER_HOME = os.path.expanduser(f"~{_REAL_USER}")
-VENV = os.path.join(_USER_HOME, "venv/bin/python3")
+VENV     = os.path.join(_USER_HOME, "venv/bin/python3")  # QUIC: aioquic, PyAV, matplotlib
+SYS_PY  = "/usr/bin/python3"                              # RTP/SCReAM: gi, GStreamer OpenCV
 
 
 def build_topology(bw, delay, loss):
@@ -188,14 +189,14 @@ def _run_rtp(h1, h2, args):
     info("*** Launching RTP server on h1...\n")
     h1.cmd(
         f"cd {SERVER_DIR} && "
-        f"DISPLAY={_HOST_DISPLAY} PYTHONUNBUFFERED=1 {VENV} cg_server1.py > /tmp/h1_rtp.log 2>&1 &"
+        f"DISPLAY={_HOST_DISPLAY} PYTHONUNBUFFERED=1 {SYS_PY} cg_server1.py > /tmp/h1_rtp.log 2>&1 &"
     )
     time.sleep(1)
 
     info("*** Launching RTP player on h2...\n")
     h2.cmd(
         f"cd {PLAYER_DIR} && "
-        f"DISPLAY={_HOST_DISPLAY} PYTHONUNBUFFERED=1 {VENV} cg_gamer1.py > /tmp/h2_rtp.log 2>&1 &"
+        f"DISPLAY={_HOST_DISPLAY} PYTHONUNBUFFERED=1 {SYS_PY} cg_gamer1.py > /tmp/h2_rtp.log 2>&1 &"
     )
 
     info("*** Streaming in progress — waiting for completion...\n")
@@ -224,14 +225,14 @@ def _run_scream(h1, h2, args):
     info("*** Launching SCReAM server on h1...\n")
     h1.cmd(
         f"cd {SERVER_DIR} && "
-        f"{_GST_ENV} DISPLAY={_HOST_DISPLAY} PYTHONUNBUFFERED=1 {VENV} cg_server1.py > /tmp/h1_scream.log 2>&1 &"
+        f"{_GST_ENV} DISPLAY={_HOST_DISPLAY} PYTHONUNBUFFERED=1 {SYS_PY} cg_server1.py > /tmp/h1_scream.log 2>&1 &"
     )
     time.sleep(1)
 
     info("*** Launching SCReAM player on h2...\n")
     h2.cmd(
         f"cd {PLAYER_DIR} && "
-        f"{_GST_ENV} DISPLAY={_HOST_DISPLAY} PYTHONUNBUFFERED=1 {VENV} cg_gamer1.py > /tmp/h2_scream.log 2>&1 &"
+        f"{_GST_ENV} DISPLAY={_HOST_DISPLAY} PYTHONUNBUFFERED=1 {SYS_PY} cg_gamer1.py > /tmp/h2_scream.log 2>&1 &"
     )
 
     info("*** Streaming in progress — waiting for completion...\n")
