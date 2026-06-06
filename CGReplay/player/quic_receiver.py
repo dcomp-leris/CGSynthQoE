@@ -20,6 +20,7 @@ import yaml
 import cv2
 import numpy as np
 import pandas as pd
+import av
 from collections import defaultdict
 from pyzbar import pyzbar
 from aioquic.asyncio import connect
@@ -57,16 +58,20 @@ os.makedirs(RECV_DIR, exist_ok=True)
 for f in glob.glob(os.path.join(RECV_DIR, "*.png")):
     os.remove(f)
 
+# Frame header sent by quic_sender: [4B frame_id][4B payload_size][8B send_timestamp]
+HEADER_FMT  = "!IId"
+HEADER_SIZE = struct.calcsize(HEADER_FMT)   # 16 bytes
+
 FRAME_LOG = os.path.join(LOG_DIR, "ply_quic_frame.csv")
 RATE_LOG  = os.path.join(LOG_DIR, "ratelog_quic.csv")
 EVENT_LOG = os.path.join(LOG_DIR, "ply_quic_events.csv")
 
 with open(FRAME_LOG, "w") as f:
-    f.write("frame_id,size_bytes,recv_time,fps\n")
+    f.write("frame_id,size_bytes,recv_time,fps,response_time_ms\n")
 with open(RATE_LOG, "w") as f:
     f.write("frame_id,fps,cps\n")
 with open(EVENT_LOG, "w") as f:
-    f.write("timestamp,event,frame_id,size_bytes,fps,cmd_count\n")
+    f.write("timestamp,event,frame_id,size_bytes,fps,cmd_count,response_time_ms\n")
 
 # ---------------------------------------------------------------------------
 # Sync file loader — same format as cg_gamer1.py
@@ -90,9 +95,16 @@ sync_df = load_syncfile(SYNC_FILE)
 # Helpers
 # ---------------------------------------------------------------------------
 
-def decode_jpeg(data: bytes) -> np.ndarray | None:
-    arr = np.frombuffer(data, dtype=np.uint8)
-    return cv2.imdecode(arr, cv2.IMREAD_COLOR)
+def decode_h264(data: bytes) -> np.ndarray | None:
+    """Decode a single H.264 I-frame (independent, no prior context needed)."""
+    try:
+        codec = av.CodecContext.create('h264', 'r')
+        frames = codec.decode(av.Packet(data))
+        if frames:
+            return frames[0].to_ndarray(format='bgr24')
+    except Exception as e:
+        print(f"[WARN] H.264 decode error: {e}")
+    return None
 
 
 def read_qr(frame: np.ndarray) -> tuple[int, str | None]:
@@ -155,12 +167,12 @@ class QUICReceiverProtocol(QuicConnectionProtocol):
 
     def _process_stream(self, stream_id: int):
         raw = bytes(self._buffers.pop(stream_id, b""))
-        if len(raw) < 8:
+        if len(raw) < HEADER_SIZE:
             return  # too short for header
 
-        # Parse frame header: [4-byte frame_id][4-byte payload_size]
-        frame_id, payload_size = struct.unpack("!II", raw[:8])
-        payload = raw[8:]
+        # Parse frame header: [4B frame_id][4B payload_size][8B send_timestamp]
+        frame_id, payload_size, tx_time = struct.unpack(HEADER_FMT, raw[:HEADER_SIZE])
+        payload = raw[HEADER_SIZE:]
 
         if len(payload) != payload_size:
             print(f"[WARN] stream={stream_id} frame={frame_id}: "
@@ -171,11 +183,12 @@ class QUICReceiverProtocol(QuicConnectionProtocol):
         now = time.perf_counter()
         self._current_fps = 1.0 / max(now - self._previous_time, 1e-6)
         self._previous_time = now
+        response_time_ms = (now - tx_time) * 1000.0
 
-        # Decode JPEG
-        frame = decode_jpeg(payload)
+        # Decode H.264
+        frame = decode_h264(payload)
         if frame is None:
-            print(f"[WARN] frame={frame_id}: JPEG decode failed")
+            print(f"[WARN] frame={frame_id}: H.264 decode failed")
             self._send_control(frame_id, "Nack")
             return
 
@@ -194,10 +207,10 @@ class QUICReceiverProtocol(QuicConnectionProtocol):
                 pass
 
         with open(FRAME_LOG, "a") as f:
-            f.write(f"{frame_id},{payload_size},{now:.6f},{self._current_fps:.2f}\n")
+            f.write(f"{frame_id},{payload_size},{now:.6f},{self._current_fps:.2f},{response_time_ms:.1f}\n")
 
         print(f"[RX]  frame={frame_id:04d}  qr={detected_id:4}  "
-              f"size={payload_size:7d}B  fps={self._current_fps:5.1f}")
+              f"size={payload_size:7d}B  fps={self._current_fps:5.1f}  rt={response_time_ms:6.1f}ms")
 
         self._frame_count += 1
         n_cmds = 0
@@ -218,7 +231,7 @@ class QUICReceiverProtocol(QuicConnectionProtocol):
             print(f"[CMD] frame={frame_id:04d}  commands={n_cmds}")
 
         with open(EVENT_LOG, "a") as f:
-            f.write(f"{now:.6f},FRAME,{frame_id},{payload_size},{self._current_fps:.2f},{n_cmds}\n")
+            f.write(f"{now:.6f},FRAME,{frame_id},{payload_size},{self._current_fps:.2f},{n_cmds},{response_time_ms:.1f}\n")
 
         self._frame_counter += 1
 

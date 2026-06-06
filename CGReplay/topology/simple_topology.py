@@ -35,7 +35,11 @@ DEFAULT_BW    = 10     # Mbps
 DEFAULT_DELAY = "10ms"
 DEFAULT_LOSS  = 0      # %
 QUIC_PORT     = 4433
+RTP_PORT      = 5002   # used for RTP and SCReAM traffic
 PCAP_TMP      = "/tmp/cgquic_capture.pcap"
+
+# Inherit DISPLAY for live watching inside Mininet hosts
+_HOST_DISPLAY = os.environ.get("DISPLAY", ":0")
 
 # Resolve paths relative to this script's directory, not the cwd.
 # This makes the script work regardless of where sudo is invoked from.
@@ -100,10 +104,12 @@ def run(args):
     if os.path.exists(PCAP_TMP):
         os.remove(PCAP_TMP)
 
-    info("*** Starting PCAP capture on h2 (any iface, UDP port 4433)\n")
+    # Capture the relevant UDP port for the selected protocol
+    capture_port = QUIC_PORT if args.protocol == "quic" else RTP_PORT
+    info(f"*** Starting PCAP capture on h2 (any iface, UDP port {capture_port})\n")
     info(f"    tcpdump user inside h2: {h2.cmd('id').strip()}\n")
     h2.cmd(
-        f"tcpdump -i any -w {PCAP_TMP} udp port {QUIC_PORT} "
+        f"tcpdump -i any -w {PCAP_TMP} udp port {capture_port} "
         f"> /tmp/tcpdump.log 2>&1 & echo $! > /tmp/tcpdump.pid"
     )
     time.sleep(1)  # give tcpdump time to open the capture device
@@ -112,6 +118,8 @@ def run(args):
 
     if args.protocol == "quic":
         _run_quic(h1, h2, args)
+    elif args.protocol == "scream":
+        _run_scream(h1, h2, args)
     else:
         _run_rtp(h1, h2, args)
 
@@ -135,20 +143,34 @@ def run(args):
     info("*** Stopping network\n")
     net.stop()
 
+    # Post-processing: compute quality metrics and generate QoE CSV
+    if not args.skip_metrics:
+        import subprocess as _sp
+        info(f"\n*** Running post-processing (mode={args.protocol}) ...\n")
+        result = _sp.run(
+            [VENV, os.path.join(_SCRIPT_DIR, "../tools/post_process.py"),
+             "--mode", args.protocol],
+            cwd=os.path.normpath(os.path.join(_SCRIPT_DIR, "..")),
+        )
+        if result.returncode == 0:
+            info("*** Metrics saved. Run 'python3 tools/plot_qoe.py' to generate figures.\n")
+        else:
+            info("[WARN] post_process.py returned non-zero — check received_frames/\n")
+
 
 def _run_quic(h1, h2, args):
     """Launch CGReplay main scripts with QUIC transport (requires QUIC: True in config.yaml)."""
     info("*** Launching CGReplay server (QUIC mode) on h1...\n")
     h1.cmd(
         f"cd {SERVER_DIR} && "
-        f"PYTHONUNBUFFERED=1 {VENV} cg_server1.py > /tmp/h1_quic.log 2>&1 &"
+        f"DISPLAY={_HOST_DISPLAY} PYTHONUNBUFFERED=1 {VENV} cg_server1.py > /tmp/h1_quic.log 2>&1 &"
     )
     time.sleep(1)  # wait for server to bind
 
     info("*** Launching CGReplay player (QUIC mode) on h2...\n")
     h2.cmd(
         f"cd {PLAYER_DIR} && "
-        f"PYTHONUNBUFFERED=1 {VENV} cg_gamer1.py > /tmp/h2_quic.log 2>&1 &"
+        f"DISPLAY={_HOST_DISPLAY} PYTHONUNBUFFERED=1 {VENV} cg_gamer1.py > /tmp/h2_quic.log 2>&1 &"
     )
 
     info("*** Streaming in progress — waiting for completion...\n")
@@ -166,14 +188,14 @@ def _run_rtp(h1, h2, args):
     info("*** Launching RTP server on h1...\n")
     h1.cmd(
         f"cd {SERVER_DIR} && "
-        f"{VENV} cg_server1.py > /tmp/h1_rtp.log 2>&1 &"
+        f"DISPLAY={_HOST_DISPLAY} PYTHONUNBUFFERED=1 {VENV} cg_server1.py > /tmp/h1_rtp.log 2>&1 &"
     )
     time.sleep(1)
 
     info("*** Launching RTP player on h2...\n")
     h2.cmd(
         f"cd {PLAYER_DIR} && "
-        f"{VENV} cg_gamer1.py > /tmp/h2_rtp.log 2>&1 &"
+        f"DISPLAY={_HOST_DISPLAY} PYTHONUNBUFFERED=1 {VENV} cg_gamer1.py > /tmp/h2_rtp.log 2>&1 &"
     )
 
     info("*** Streaming in progress — waiting for completion...\n")
@@ -183,6 +205,30 @@ def _run_rtp(h1, h2, args):
     info(h1.cmd("tail -20 /tmp/h1_rtp.log"))
     info("\n--- h2 player log (tail) ---\n")
     info(h2.cmd("tail -20 /tmp/h2_rtp.log"))
+
+
+def _run_scream(h1, h2, args):
+    """Launch CGReplay with SCReAM congestion control (requires SCReAM: True in config.yaml)."""
+    info("*** Launching SCReAM server on h1...\n")
+    h1.cmd(
+        f"cd {SERVER_DIR} && "
+        f"DISPLAY={_HOST_DISPLAY} PYTHONUNBUFFERED=1 {VENV} cg_server1.py > /tmp/h1_scream.log 2>&1 &"
+    )
+    time.sleep(1)
+
+    info("*** Launching SCReAM player on h2...\n")
+    h2.cmd(
+        f"cd {PLAYER_DIR} && "
+        f"DISPLAY={_HOST_DISPLAY} PYTHONUNBUFFERED=1 {VENV} cg_gamer1.py > /tmp/h2_scream.log 2>&1 &"
+    )
+
+    info("*** Streaming in progress — waiting for completion...\n")
+    _wait_for_completion(h2, "/tmp/h2_scream.log", "Received Frame", timeout=300)
+
+    info("\n--- h1 server log (tail) ---\n")
+    info(h1.cmd("tail -20 /tmp/h1_scream.log"))
+    info("\n--- h2 player log (tail) ---\n")
+    info(h2.cmd("tail -20 /tmp/h2_scream.log"))
 
 
 def _wait_for_completion(host, log_file: str, marker: str, timeout: int = 300):
@@ -213,7 +259,7 @@ if __name__ == "__main__":
         description="CGReplay simple Mininet topology: h1 -- s1 -- h2"
     )
     parser.add_argument(
-        "--protocol", choices=["rtp", "quic"], default="quic",
+        "--protocol", choices=["rtp", "quic", "scream"], default="quic",
         help="Transport protocol (default: quic)"
     )
     parser.add_argument(
@@ -231,6 +277,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--cli", action="store_true",
         help="Drop into Mininet CLI after streaming finishes"
+    )
+    parser.add_argument(
+        "--skip-metrics", action="store_true",
+        help="Skip post-processing step (don't run post_process.py)"
     )
 
     run(parser.parse_args())

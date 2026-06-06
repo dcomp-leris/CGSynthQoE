@@ -20,6 +20,7 @@ import yaml
 import cv2
 import numpy as np
 import qrcode
+import av
 from aioquic.asyncio.server import serve
 from aioquic.quic.configuration import QuicConfiguration
 from aioquic.asyncio.protocol import QuicConnectionProtocol
@@ -43,7 +44,7 @@ FOLDER          = config[GAME]["frames"]
 FPS             = config["encoding"]["fps"]
 WIDTH           = config["encoding"]["resolution"]["width"]
 HEIGHT          = config["encoding"]["resolution"]["height"]
-JPEG_QUALITY    = 85
+BITRATE_KBPS    = config["encoding"]["starting_bitrate"]
 QUIC_HOST       = config["server"]["server_IP"]
 QUIC_PORT       = config["protocols"].get("quic_port", 4433)
 CERT_FILE       = config["protocols"].get("quic_cert", "../../rtp_stream_creation/server.pem")
@@ -53,6 +54,10 @@ LOG_DIR = "./logs"
 os.makedirs(LOG_DIR, exist_ok=True)
 FRAME_LOG = os.path.join(LOG_DIR, "srv_quic_frame.csv")
 EVENT_LOG = os.path.join(LOG_DIR, "srv_quic_events.csv")
+
+# Frame header: [4B frame_id][4B payload_size][8B send_timestamp (double)]
+HEADER_FMT  = "!IId"
+HEADER_SIZE = struct.calcsize(HEADER_FMT)   # 16 bytes
 
 with open(FRAME_LOG, "w") as f:
     f.write("frame_id,size_bytes,send_time,fps\n")
@@ -79,9 +84,25 @@ def embed_qr(frame: np.ndarray, frame_id: int, bitrate: int) -> np.ndarray:
     return frame
 
 
-def encode_jpeg(frame: np.ndarray) -> bytes:
-    _, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, JPEG_QUALITY])
-    return buf.tobytes()
+def create_h264_encoder(bitrate_kbps: int) -> av.CodecContext:
+    """Create a reusable PyAV H.264 encoder (all-I-frame, ultrafast)."""
+    codec = av.CodecContext.create('libx264', 'w')
+    codec.width = WIDTH
+    codec.height = HEIGHT
+    codec.pix_fmt = 'yuv420p'
+    codec.bit_rate = bitrate_kbps * 1000
+    codec.options = {
+        'preset': 'ultrafast',
+        'tune': 'zerolatency',
+        'x264-params': 'keyint=1:min-keyint=1',
+    }
+    codec.open()
+    return codec
+
+
+def encode_h264(frame_bgr: np.ndarray, codec: av.CodecContext) -> bytes:
+    av_frame = av.VideoFrame.from_ndarray(frame_bgr, format='bgr24')
+    return b''.join(bytes(p) for p in codec.encode(av_frame))
 
 
 def list_frames() -> list[str]:
@@ -104,11 +125,12 @@ class QUICSenderProtocol(QuicConnectionProtocol):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._streaming_task: asyncio.Task | None = None
-        self._bitrate = 2000          # kbps (static for prototype)
+        self._bitrate = BITRATE_KBPS
         self._last_ack_frame = 0
         self._frame_count = 0
         self._ctrl_count = 0
         self._session_start = time.perf_counter()
+        self._h264 = create_h264_encoder(self._bitrate)
 
     def quic_event_received(self, event):
         if isinstance(event, HandshakeCompleted):
@@ -157,13 +179,14 @@ class QUICSenderProtocol(QuicConnectionProtocol):
                 continue
             frame = cv2.resize(frame, (WIDTH, HEIGHT), interpolation=cv2.INTER_AREA)
             frame = embed_qr(frame, frame_id, self._bitrate)
-            payload = encode_jpeg(frame)
+            payload = encode_h264(frame, self._h264)
 
             # Each frame on its own server-unidirectional stream
             stream_id = self._quic.get_next_available_stream_id(is_unidirectional=True)
 
-            # Frame header: [4-byte frame_id][4-byte payload_size]
-            header = struct.pack("!II", frame_id, len(payload))
+            # Frame header: [4B frame_id][4B payload_size][8B send_timestamp]
+            send_time = time.perf_counter()
+            header = struct.pack(HEADER_FMT, frame_id, len(payload), send_time)
             self._quic.send_stream_data(stream_id, header + payload, end_stream=True)
             self.transmit()
 
