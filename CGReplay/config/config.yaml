@@ -101,8 +101,8 @@ Running:
 # ScreAM Setup
 protocols:
     SCReAM: False # False = 0 / True = 1
-    sender: "../scream/scream/gstscream/scripts/sender.sh"
-    receiver: "../scream/scream/gstscream/scripts/receiver.sh"
+    sender: "../scream/gstscream/scripts/sender.sh"
+    receiver: "../scream/gstscream/scripts/receiver.sh"
     # QUIC transport (used by quic_sender.py / quic_receiver.py)
     QUIC: True
     quic_port: 4433

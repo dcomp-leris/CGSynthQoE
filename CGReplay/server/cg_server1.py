@@ -257,30 +257,13 @@ def stream_frames(game_name):
         # SCReAM
         
         sender_output = subprocess.run([scream_sender], capture_output=True, text=True, shell=True)
-      
-        pipeline_str = sender_output.stdout.strip()  # Remove any extra whitespace
-        # Parse and launch the pipeline
-        pipeline = Gst.parse_launch(pipeline_str)
-        print(pipeline)
-        # Start the pipeline
-        #pipeline.set_state(Gst.State.PLAYING)
-        print(f"Using GStreamer pipeline: {pipeline_str}")
-        #if not source:
-            #print("❌ Failed to retrieve multifilesrc element from the pipeline.")
-            #sys.exit(1)
-        '''
-        # Get pipeline string
-        pipeline_str = sender_output.stdout.strip() 
-        # Debug print
-        #print(f"🚀 Debug: GStreamer Pipeline from sender.sh:\n{pipeline_str}")
-        # Check if pipeline is empty
+        pipeline_str = sender_output.stdout.strip()
         if not pipeline_str:
-            print("❌ sender.sh did not return a valid pipeline.")
-        return
-        # Now parse it
-        pipeline = Gst.parse_launch(pipeline_str)       
+            print("ERROR: sender.sh returned empty pipeline string.")
+            return
+        print(f"Using GStreamer pipeline: {pipeline_str}")
+        pipeline = Gst.parse_launch(pipeline_str)
         appsrc = pipeline.get_by_name("source")
-        '''
     print("=========================")
     print(f"\n🔍 Debugging: Generated GStreamer Pipeline String:\n{pipeline_str}\n")
     print("=========================")

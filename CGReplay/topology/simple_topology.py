@@ -208,22 +208,38 @@ def _run_rtp(h1, h2, args):
 
 
 def _run_scream(h1, h2, args):
-    """Launch CGReplay with SCReAM congestion control (requires SCReAM: True in config.yaml)."""
+    """Launch CGReplay with SCReAM congestion control."""
+    _SCREAM_LIB = os.path.expanduser("~/CGSynth/scream/code/wrapper_lib")
+    _SCREAM_PLUGIN = os.path.expanduser("~/CGSynth/scream/gstscream/target/debug")
+    _GST_ENV = (
+        f"GST_PLUGIN_PATH={_SCREAM_PLUGIN}:${{GST_PLUGIN_PATH:-}} "
+        f"LD_LIBRARY_PATH={_SCREAM_LIB}:${{LD_LIBRARY_PATH:-}}"
+    )
+
+    # Temporarily enable SCReAM and disable QUIC in config
+    _config = os.path.join(_SCRIPT_DIR, "../config/config.yaml")
+    os.system(f"sed -i 's/QUIC: True/QUIC: False/' {_config}")
+    os.system(f"sed -i 's/SCReAM: False/SCReAM: True/' {_config}")
+
     info("*** Launching SCReAM server on h1...\n")
     h1.cmd(
         f"cd {SERVER_DIR} && "
-        f"DISPLAY={_HOST_DISPLAY} PYTHONUNBUFFERED=1 {VENV} cg_server1.py > /tmp/h1_scream.log 2>&1 &"
+        f"{_GST_ENV} DISPLAY={_HOST_DISPLAY} PYTHONUNBUFFERED=1 {VENV} cg_server1.py > /tmp/h1_scream.log 2>&1 &"
     )
     time.sleep(1)
 
     info("*** Launching SCReAM player on h2...\n")
     h2.cmd(
         f"cd {PLAYER_DIR} && "
-        f"DISPLAY={_HOST_DISPLAY} PYTHONUNBUFFERED=1 {VENV} cg_gamer1.py > /tmp/h2_scream.log 2>&1 &"
+        f"{_GST_ENV} DISPLAY={_HOST_DISPLAY} PYTHONUNBUFFERED=1 {VENV} cg_gamer1.py > /tmp/h2_scream.log 2>&1 &"
     )
 
     info("*** Streaming in progress — waiting for completion...\n")
     _wait_for_completion(h2, "/tmp/h2_scream.log", "Received Frame", timeout=300)
+
+    # Restore config
+    os.system(f"sed -i 's/QUIC: False/QUIC: True/' {_config}")
+    os.system(f"sed -i 's/SCReAM: True/SCReAM: False/' {_config}")
 
     info("\n--- h1 server log (tail) ---\n")
     info(h1.cmd("tail -20 /tmp/h1_scream.log"))
