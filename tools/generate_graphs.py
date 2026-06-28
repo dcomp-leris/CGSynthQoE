@@ -35,6 +35,21 @@ def get_game_color(series_label: str) -> str:
     return "#CCCCCC"
 
 
+GAME_HATCHES = {
+    "Fortnite": "",
+    "Forza": "//",
+    "Kombat": "xx",
+}
+
+
+def get_hatch(series_label: str) -> str:
+    parts = series_label.rsplit(" ", 1)
+    if len(parts) == 2:
+        game = parts[0]
+        return GAME_HATCHES.get(game, "")
+    return ""
+
+
 def plot_vmaf_real_vs_synth(
     repo_root: str,
     games: List[str],
@@ -108,7 +123,7 @@ def plot_vmaf_real_vs_synth(
         ax.bar(
             positions, values, bar_width,
             label=series, edgecolor="black", linewidth=0.9,
-            color=get_game_color(series),
+            color=get_game_color(series), hatch=get_hatch(series),
         )
 
     ax.set_xlabel("Bandwidth (Mbps)", fontsize=22)
@@ -203,7 +218,7 @@ def plot_psnr_real_vs_synth(
         ax.bar(
             positions, values, bar_width,
             label=series, edgecolor="black", linewidth=0.9,
-            color=get_game_color(series),
+            color=get_game_color(series), hatch=get_hatch(series),
         )
 
     ax.set_xlabel("Bandwidth (Mbps)", fontsize=22)
@@ -298,7 +313,7 @@ def plot_ssim_real_vs_synth(
         ax.bar(
             positions, values, bar_width,
             label=series, edgecolor="black", linewidth=0.9,
-            color=get_game_color(series),
+            color=get_game_color(series), hatch=get_hatch(series),
         )
 
     ax.set_xlabel("Bandwidth (Mbps)", fontsize=22)
@@ -393,7 +408,7 @@ def plot_lpips_real_vs_synth(
         ax.bar(
             positions, values, bar_width,
             label=series, edgecolor="black", linewidth=0.9,
-            color=get_game_color(series),
+            color=get_game_color(series), hatch=get_hatch(series),
         )
 
     ax.set_xlabel("Bandwidth (Mbps)", fontsize=22)
@@ -494,6 +509,7 @@ def plot_qvideo_summary_real_vs_synth(
             edgecolor="black",
             linewidth=0.9,
             color=get_game_color(series),
+            hatch=get_hatch(series),
         )
 
     ax.set_xlabel("Bandwidth (Mbps)", fontsize=22)
@@ -611,7 +627,7 @@ def plot_delay_and_rt_real_vs_synth(
     ax.set_ylabel("Delay / Response Time (ms)", fontsize=24)
 
     line_dr, = ax.plot(
-        x, d_r, color=delay_real_color, linestyle="-", marker="o",
+        x, d_r, color=delay_real_color, linestyle="-", marker="v",
         linewidth=2.5, label="Real Video Delay",
     )
     line_ds, = ax.plot(
@@ -760,12 +776,12 @@ def plot_qint_real_vs_synth(
     bars_real = ax.bar(
         x - bar_width / 2, qint_r, width=bar_width,
         color=real_color, edgecolor="black", linewidth=1.0,
-        label="Real $Q_{Int}$",
+        label="Real $Q_{Int}$", hatch=GAME_HATCHES.get(game, ""),
     )
     bars_synth = ax.bar(
         x + bar_width / 2, qint_s, width=bar_width,
         color=synth_color, edgecolor="black", linewidth=1.0,
-        label="Synth $Q_{Int}$",
+        label="Synth $Q_{Int}$", hatch=GAME_HATCHES.get(game, ""),
     )
 
     ax.set_xticks(x)
@@ -913,12 +929,12 @@ def plot_qoe_real_vs_synth(
     bars_real = ax1.bar(
         x - bar_width / 2, qoe_r, width=bar_width,
         color=real_color, edgecolor="black", linewidth=1.0,
-        label="Real QoE",
+        label="Real QoE", hatch=GAME_HATCHES.get(game, ""),
     )
     bars_synth = ax1.bar(
         x + bar_width / 2, qoe_s, width=bar_width,
         color=synth_color, edgecolor="black", linewidth=1.0,
-        label="Synth QoE",
+        label="Synth QoE", hatch=GAME_HATCHES.get(game, ""),
     )
 
     ax1.set_xticks(x)
