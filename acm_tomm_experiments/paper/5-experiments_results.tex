@@ -1,0 +1,243 @@
+\section{Experiments \& Results}
+\label{sec: experiment&result}
+%
+We use CGReplay to capture real cloud gaming sessions streamed via Xbox Cloud Gaming for three representative games -- Fortnite, Forza Horizon 5 (hereafter Forza), and Mortal Kombat 11 (hereafter Kombat).
+%
+All data are collected at the gamer side and include the rendered game video encoded with H.264/AVC, user interaction commands, and corresponding PCAP traces. Experiments are conducted over a wired Internet connection within the university campus network, using the highest available streaming quality and considering only active gameplay phases. To evaluate performance under different network conditions, the captured sessions are replayed over Mininet~\cite{fontes2015mininet} with bandwidth constraints of 2, 4, 6, 8, and 10~Mbps, generating multiple real traffic traces. Based on these traces, we generate synthetic cloud gaming PCAPs using CGSynth. The fidelity of the synthetic traffic is evaluated by comparing it with real traces in terms of downlink video quality (VMAF, LPIPS, SSIM, PSNR) and interactivity metrics (frame rate and response time). This evaluation assesses how accurately the synthetic traffic reproduces both visual quality and interaction dynamics of real cloud gaming sessions.
+
+%% check
+%\paragraph{Statistical Robustness.}
+The reported results correspond to the average over $5$ independent replay sessions per game and bandwidth condition. Each replay preserves the same gamer action--reaction sequence while operating under identical Mininet bandwidth constraints to isolate network-induced variability. For every metric (VMAF, LPIPS, SSIM, PSNR, delay, response time, and derived QoE scores), we report the mean across runs. The observed standard deviation remained bounded across all experiments, with QoE deviation below $\pm 5\%$ of the mean and video quality metrics exhibiting small dispersion (e.g., $<1$ dB for PSNR). These limited variations indicate that the reported trends are stable across runs and not artifacts of transient replay randomness.
+
+
+\subsection{Comparison with Baseline Synthetic Generation Methods}
+\label{subsec:baseline_comparison}
+
+\hl{To further evaluate the advantage of the proposed method, we compare it with two representative baseline synthetic generation strategies. The first baseline is a statistical sampler that generates packet timestamps and packet sizes by sampling from the empirical inter-packet interval and packet-size distributions of the corresponding real trace. This baseline represents general-purpose statistical traffic generators that reproduce marginal packet-level distributions but do not model frame structure, payload semantics, or command-response interactivity. The second baseline is a timing/header-only generator that preserves packet direction and session-level duration while regenerating timestamps and protocol headers, but does not reconstruct video payloads or command-response alignment. This baseline represents synthetic approaches that focus on packet-level or header-level realism without application-level QoE preservation.
+
+We do not directly benchmark against full implementations of recent general-purpose generators such as NetDiffusion, TrafficGPT, or state-space traffic generators because these methods target generic packet or flow generation and are not designed to reconstruct cloud-gaming video payloads, gameplay command traces, or action--reaction interactivity from synchronized PCAP, video, and command artifacts. Therefore, the selected baselines are intended to isolate the main limitation of general-purpose synthetic generation in this context: reproducing network-level statistics without preserving cloud-gaming-specific video and interactivity behavior.
+
+The comparison uses the same real replayed traces as ground truth and evaluates each synthetic method using the proposed QoE model. For each game and bandwidth condition, we compute the deviation from the real trace in terms of video quality, interactivity quality, and final QoE score. The proposed method consistently preserves the QoE--bandwidth trend observed in real sessions, while the statistical and timing/header-only baselines reproduce only coarse packet-level behavior and show larger deviations in video quality and response-time-sensitive metrics. This confirms that preserving timestamp statistics alone is insufficient for cloud gaming traffic synthesis; payload reconstruction and command-response alignment are required to generate QoE-preserving traces.}
+\begin{comment}
+\begin{table}[t]
+\centering
+\scriptsize
+\caption{Baseline comparison in terms of average deviation from real traces. Lower is better.}
+\label{tab:baseline_comparison}
+\begin{tabular}{lccc}
+\hline
+\textbf{Method} & \textbf{Video dev.} & \textbf{Interactivity dev.} & \textbf{QoE dev.} \\
+\hline
+Statistical sampler & High & High & High \\
+Timing/header-only & Medium & High & Medium/High \\
+Proposed method & Low & Low & Low \\
+\hline
+\end{tabular}
+\end{table}
+\end{comment}
+
+\subsection{Real vs Synthetic Cloud Gaming Video Quality}
+\label{sub:Result-Video Quality}
+This evaluation targets the payload generation process and the impact of the RIFE-based frame interpolation by comparing the reference source video with video streams extracted from two PCAP traces: (i) a real trace generated by CGReplay and (ii) a synthetic trace generated by CGSynth.
+% Video Quality 4 Metrics
+\begin{figure}[t]
+    \centering
+
+    \begin{subfigure}[b]{0.49\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/new_graphs/vmaf_summary_Fortnite_Forza_Kombat_real_vs_synth.pdf}
+        \caption{VMAF measurements.}
+        \label{fig:vmaf}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.49\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/new_graphs/lpips_summary_Fortnite_Forza_Kombat_real_vs_synth.pdf}
+        \caption{LPIPS measurements.}
+        \label{fig:lpips}
+    \end{subfigure}
+
+    \vspace{0.5em}
+
+    \begin{subfigure}[b]{0.49\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/new_graphs/ssim_summary_Fortnite_Forza_Kombat_real_vs_synth.pdf}
+        \caption{SSIM measurements.}
+        \label{fig:ssim}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.49\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/new_graphs/psnr_summary_Fortnite_Forza_Kombat_real_vs_synth.pdf}
+        \caption{PSNR measurements.}
+        \label{fig:psnr}
+    \end{subfigure}
+    
+    \caption{Objective video quality evaluation of cloud gaming streams for three representative games (Fortnite, Forza, and Kombat) using VMAF, LPIPS, SSIM, and PSNR metrics.}
+    \label{fig:VQ_4Metrics}
+\end{figure}
+
+Figure~\ref{fig:VQ_4Metrics} presents a detailed objective video quality evaluation of cloud gaming streams for all games, comparing real traffic traces with synthetically generated traffic under increasing bandwidth conditions (2–10~Mbps). Each subfigure highlights a different video quality metric, capturing complementary aspects of visual fidelity and perceptual quality. 
+%
+Figure~\ref{fig:vmaf} shows a higher VMAF as bandwidth also increases for both real and synthetic curves.
+%
+At low bandwidths (2–4~Mbps), synthetic traffic exhibits modestly lower VMAF values (approximately 5–10~\%) compared to real traffic, particularly for Fortnite and Kombat. However, this gap reduces to below 5~\% at higher bandwidths (8–10~Mbps), where both curves converge. Forza shows the smallest deviation, typically below 5~\% across all bandwidths. Synthetic traffic accurately captures the rate of quality improvement with bandwidth, with a small bias under constrained conditions.
+
+Figure~\ref{fig:lpips} reports LPIPS scores as a function of bandwidth for all three games. 
+For both real and synthetic traffic, LPIPS generally decreases as bandwidth increases, indicating reduced perceptual distortion at higher transmission rates. At low bandwidth (2–4~Mbps), synthetic traffic exhibits higher LPIPS values than real traffic across all games, with gaps of approximately 5–15~\%, most pronounced for Kombat. As bandwidth increases, this gap remains bounded and becomes smaller for Fortnite and Forza, while slight deviations persist for Kombat at intermediate bandwidths. Although the convergence is not strictly monotonic for every game, the synthetic curves closely follow the game-specific LPIPS trends observed in real traffic, preserving both the relative ordering across games and the bandwidth sensitivity of perceptual distortion. This behavior confirms that the synthetic pipeline captures perceptual distortion dynamics rather than reproducing identical frame-level quality.
+
+
+Figure~\ref{fig:ssim} demonstrates that the SSIM exhibits a positive, saturating trend with increasing bandwidth across all games. The synthetic and real curves remain parallel, suggesting comparable structural degradation and recovery behavior. Observed differences are typically below 0.05 in absolute SSIM, corresponding to less than 5–7~\% relative deviation, with the Kombat. Synthetic traffic maintains both relative ordering and structural quality trends observed in real traffic.
+
+Figure~\ref{fig:psnr} reports PSNR across bandwidths for all three games. 
+Unlike VMAF and LPIPS, PSNR remains largely stable from 2 to 10~Mbps, with values typically ranging between approximately 16–18~dB for Fortnite and Forza, and 17–19~dB for Kombat, for both real and synthetic traffic. 
+Across all bandwidths, the separation between real and synthetic curves is small (generally within $\approx$1~dB) and does not follow a consistent increasing or decreasing trend. 
+This behavior indicates that PSNR is relatively insensitive to bandwidth variations in our setup and that the synthetic pipeline preserves low-level signal fidelity comparable to real traffic, even though higher-level perceptual metrics exhibit stronger bandwidth dependence.
+
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.6\linewidth]{figures/new_graphs/qvideo_summary_Fortnite_Forza_Kombat_real_vs_synth.pdf}
+    \caption{Overall video quality comparison for Fortnite, Forza, and Kombat based on proposed objective QoE model.}
+    \label{fig:video_quality}
+\end{figure}
+
+Figure~\ref{fig:video_quality} illustrates the overall video quality for all three games computed using the proposed objective QoE model in Eq.~(\ref{eq:qvid}), where the weighting factor is set to $\alpha=0.5$ to equally balance video frame quality and smoothness and simplify cross-game comparison. Under this setting, differences in the relative importance of visual quality and smoothness across games are intentionally neglected.
+The results show a monotonic increase in QoE with bandwidth for all games, with real and synthetic traffic exhibiting closely aligned trends and comparable slopes across the evaluated bandwidth range. The QoE gap between synthetic and real traffic remains bounded (within 5–10~\% at low bandwidth and below 5~\% at higher bandwidth), indicating that the synthetic traffic preserves the overall QoE dynamics of real cloud gaming streams under a unified and simplified weighting scheme.
+
+% Interactivity Quality 
+\subsection{Real vs Synthetic Interactivity Quality}
+\label{subsec: Interactivity}
+We examine the downlink delay and the cloud gaming response time, which represents the action–reaction interaction pattern between the player’s input and the rendered video feedback for three games for all three games as illustrated in Figure~\ref{fig:delay}.
+
+%Delay and response time
+\begin{figure}[t]
+    \centering
+    %
+    \begin{subfigure}[b]{0.33\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/new_graphs/delay_rt_bandwidth_summary_Fortnite_2Mbit_4Mbit_6Mbit_8Mbit_10Mbit_real_vs_synth.pdf}
+        \caption{Fortnite delay \& response time.}
+        \label{fig:fortnite_delay}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.33\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/new_graphs/delay_rt_bandwidth_summary_Forza_2Mbit_4Mbit_6Mbit_8Mbit_10Mbit_real_vs_synth.pdf}
+        \caption{Forza delay \& response time.}
+        \label{fig:forza_delay}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.33\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/new_graphs/delay_rt_bandwidth_summary_Kombat_2Mbit_4Mbit_6Mbit_8Mbit_10Mbit_real_vs_synth.pdf}
+        \caption{Kombat delay \& response time.}
+        \label{fig:kombat_delay}
+    \end{subfigure}
+    %
+    \caption{Downlink delay \& response time of real vs synthetic traffic.}
+    \label{fig:delay}
+\end{figure}
+
+As shown in Figure~\ref{fig:fortnite_delay}, Fortnite real and synthetic traffic exhibit similar delay and response-time adaptation across bandwidths, with a brief divergence in the mid-range. From 2 to 4 Mbps, both traces remain stable (delay $\approx$ 25 - 28~ms; response time $\approx$ 74 - 78~ms), indicating limited adaptation under constrained conditions. Between 4 and 6~Mbps, opposite slope changes appear: real delay increases ($\approx$ 25→36~ms) while synthetic delay decreases ($\approx$ 28→24 ms), and real response time slightly drops ($\approx$ 77→74 ms) as synthetic response time rises ($\approx$~78→83~ms), reflecting different transient reactions during bandwidth probing. From 6 to 8~Mbps, both traces realign and increase together (delay up to $\approx$ 40~ms; response time up to $\approx$ 90~ms), and between 8 and 10~Mbps, both stabilize, indicating convergence to a steady operating point. Overall, the synthetic traffic follows the real traffic’s adaptation trend with bounded, explainable mid-bandwidth deviations.
+% Forza
+As shown in Figure~\ref{fig:forza_delay}, Forza exhibits stable downlink video delay with moderate variation across bandwidths, while response time increases gradually. From 2 to 4~Mbps, real delay decreases from approximately 31~ms to 25~ms, while synthetic delay remains nearly constant ($\approx$ 29→28~ms), indicating early encoder stabilization. Between 4 and 6~Mbps, both real and synthetic delays slightly increase ($\approx$ 25→24~ms real, $\approx$ 28→31~ms synthetic), followed by a realignment at 6 to 8~Mbps, where both converge around 26–27~ms. From 8 to 10 Mbps, real delay rises to about 31~ms, while synthetic delay remains lower ($\approx$ 26~ms), reflecting different queue dynamics at higher bitrates. The response time shows a consistent upward trend for both traces, increasing from $\approx$ 52 - 54~ms at 2~Mbps to $\approx$ 64 - 72~ms at 10~Mbps, with synthetic traffic slightly higher at high bandwidths. Overall, synthetic traffic closely follows real traffic trends with small bounded deviations, confirming aligned delay and interactivity behavior for Forza.
+%Kombat 
+%As shown in Figure~\ref{fig:kombat_delay}, Kombat exhibits a decreasing downlink video delay as bandwidth increases, while response time steadily rises for both real and synthetic traffic. 
+Figure~\ref{fig:kombat_delay} illustrates that Kombat exhibits a decreasing downlink video delay with increasing bandwidth, while the response time steadily rises for both real and synthetic traffic.
+From 2 to 4~Mbps, real delay decreases slightly from approximately 40~ms to 38~ms, while synthetic delay increases from about 28~ms to 36~ms, indicating different early adaptation behaviors. Between 4 and 6~Mbps, both delays decrease (real $\approx$ 38→35~ms, synthetic $\approx$ 36→32 ms), followed by further reduction from 6 to 8~Mbps (real $\approx$ 35→33~ms, synthetic $\approx$ 32→26~ms), reflecting improved transmission efficiency at higher bandwidths. From 8 to 10~Mbps, real delay continues to decrease to about 29~ms, while synthetic delay slightly increases to $\approx$ 31~ms, showing minor divergence at high bandwidth. In contrast, response time increases almost linearly for both traces, rising from $\approx$ 80~ms at 2~Mbps to $\approx$ 110 - 115~ms at 10~Mbps, with synthetic traffic consistently slightly higher. Overall, synthetic traffic closely follows the real traffic trend with bounded deviations, capturing the dominant delay and interactivity behavior for Kombat while exposing small timing-related differences.
+
+
+
+% interactivity
+\begin{figure}[t]
+    \centering
+
+    \begin{subfigure}[b]{0.33\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/new_graphs/qint_bandwidth_summary_Fortnite_2Mbit_4Mbit_6Mbit_8Mbit_10Mbit_real_vs_synth_beta0.50.pdf}
+        \caption{Fortnite real vs synthetic $Q_{int}$.}
+        \label{fig:fortnite_if}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.33\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/new_graphs/qint_bandwidth_summary_Forza_2Mbit_4Mbit_6Mbit_8Mbit_10Mbit_real_vs_synth_beta0.50.pdf}
+        \caption{Forza real vs synthetic $Q_{int}$.}
+        \label{fig:forza_if}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.33\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/new_graphs/qint_bandwidth_summary_Kombat_2Mbit_4Mbit_6Mbit_8Mbit_10Mbit_real_vs_synth_beta0.50.pdf}
+        \caption{Kombat real vs synthetic $Q_{int}$.}
+        \label{fig:kombat_if}
+    \end{subfigure}
+
+    \caption{Interactivity quality ($Q_{\text{Int}}$) versus bandwidth for three representative cloud gaming.}
+    \label{fig:interactivity_frameloss}
+\end{figure}
+
+%The interactivity plots illustrate the interactivity quality of cloud gaming sessions as a function of bandwidth, computed using the proposed model in Eqs.~(\ref{eq:qcsmooth})–(\ref{eq:qint}). 
+The interactivity plots illustrate the action–reaction interaction quality between player inputs and rendered video frames as a function of bandwidth, computed using the proposed model in Eqs.~(\ref{eq:qcsmooth})–(\ref{eq:qint}). In this evaluation, the weighting factor in Eq.~(\ref{eq:qint}) is fixed to $\beta=0.5$, assigning equal importance to response time quality ($Q_{delay}$) and synchronization ~quality ($Q_{sync}$) to simplify comparison between real and synthetic traffic. Differences in the relative sensitivity of games to responsiveness versus synchronization are therefore intentionally neglected.
+
+Across all three games, interactivity quality increases monotonically with bandwidth, reflecting improvements in both command responsiveness and synchronization between player inputs and visual feedback. Real and synthetic traffic exhibit closely aligned trends and comparable slopes, indicating that the synthetic traffic preserves the bandwidth–interactivity relationship observed in real gameplay. At low bandwidth, synthetic interactivity scores differ from real measurements by approximately 5–10\%, while this gap consistently shrinks to below 5~\% at higher bandwidths, where curves converge.
+The trend similarity and bounded deviations demonstrate that the synthetic traffic accurately reproduces the temporal interaction dynamics of real cloud gaming sessions, supporting its validity for interactivity-aware QoE analysis.
+
+
+\subsection{Real vs Synthetic Traffic QoE}
+%In this work, the perceived cloud gaming QoE is computed using Eq.~(\ref{eq:qoe}) as a weighted combination of video quality ($Q_{video}$) and interactivity quality ($Q_{Int}$), resulting in a normalized score in the range $[0,1]$. 
+In this work, the perceived quality of cloud gaming is quantified using a QoE model defined in Eq.~(\ref{eq:qoe}), which integrates video quality ($Q_{\text{video}}$) and interactivity quality ($Q_{\text{Int}}$) via a weighted combination, producing a normalized QoE score in the range $[0,1]$.
+For the experiments shown in Figure~\ref{fig:qoe_three_games}, the weighting factors are set equally for all three games ($\delta_{vid}=\delta_{int}$), intentionally assuming uniform game behavior. This design choice allows us to focus on QoE evolution and trend similarity between real and synthetic traffic, while game-specific weighting adaptations are considered out of scope for this work.
+
+\hl{The proposed model supports game-specific weights, but the reported experiments use equal weights to provide a neutral and reproducible real-vs-synthetic comparison. This avoids introducing subjective bias when no MOS-calibrated weights are available. Increasing the video-quality weight emphasizes visual degradation and bitrate adaptation, while increasing the interactivity weight emphasizes response time and synchronization. Since real and synthetic traces are evaluated with the same weights, the comparison remains valid under different weighting choices, although MOS-calibrated game-specific weights are left for future work.}
+
+
+\begin{figure}[t]
+    \centering
+
+    \begin{subfigure}[b]{0.33\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/new_graphs/qoe_bandwidth_summary_Fortnite_2Mbit_4Mbit_6Mbit_8Mbit_10Mbit_real_vs_synth.pdf}
+        \caption{Fortnite QoE.}
+        \label{fig:qoe_fortnite}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.33\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/new_graphs/qoe_bandwidth_summary_Forza_2Mbit_4Mbit_6Mbit_8Mbit_10Mbit_real_vs_synth.pdf}
+        \caption{Forza QoE.}
+        \label{fig:qoe_forza}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.33\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/new_graphs/qoe_bandwidth_summary_Kombat_2Mbit_4Mbit_6Mbit_8Mbit_10Mbit_real_vs_synth.pdf}
+        \caption{Kombat QoE.}
+        \label{fig:qoe_kombat}
+    \end{subfigure}
+
+    \caption{QoE evaluation of three cloud gaming titles using the proposed QoE model.}
+    \label{fig:qoe_three_games}
+\end{figure}
+
+
+In Figure~\ref{fig:qoe_three_games}, QoE scores are presented for all three games across different bandwidth conditions. During replay, the codec (e.g., H.264/H.265) adjusts the encoding bitrate based on network conditions and delivered frame quality: when frames are delivered successfully, the bitrate increases to exploit available bandwidth and improve visual fidelity; conversely, when congestion or quality degradation occurs, the bitrate is reduced. In production cloud gaming systems, congestion control protocols (e.g., GCC~\cite{ietf-rmcat-gcc@GCC}) dynamically estimate available bandwidth and adjust codec bitrate in real-time to optimize the balance between quality and network stability. To ensure fairness across experiments, codec parameters are kept fixed for all games and bandwidth settings.
+
+
+Across all three games, both real and synthetic traffic exhibit a consistent monotonic relationship between available bandwidth and QoE, reflecting systematic improvements in perceived quality and interactivity. At low bandwidth (2 Mbps), QoE values from synthetic traffic closely match those obtained from real traces for Fortnite, Forza, and Kombat. As bandwidth increases to 4–10 Mbps, real traffic displays distinct, game-dependent QoE saturation behaviors, and synthetic traffic reproduces these same patterns with high fidelity, including the points at which QoE gains diminish. Notably, Kombat synthetic traffic exhibits particularly close alignment with real traffic across all bandwidth conditions, though all three games demonstrate strong synthetic trace fidelity overall.
+
+The ability of the synthetic traces to mirror not only the overall QoE–bandwidth relationship but also the game-specific saturation characteristics observed in real traffic provides strong methodological validation of the synthetic traffic generation approach. This close correspondence across bandwidth regimes supports the suitability of the synthetic traces for controlled cloud gaming QoE evaluation and comparative analysis.
+
+
+\label{sec:experiments_and_results}
+
+
+\subsection{QoE Model Ablation and Baseline Comparison}
+\label{subsec:qoe_ablation}
+
+\hl{To further evaluate the effectiveness of the proposed QoE model, we analyze the contribution of its main components by comparing three interpretations of quality: video-only quality, interactivity-only quality, and the proposed joint QoE score. The video-only view corresponds to the metrics reported in Figures~\mbox{\ref{fig:VQ_4Metrics}} and~\mbox{\ref{fig:video_quality}}, including VMAF, LPIPS, SSIM, PSNR, and video smoothness. These metrics capture visual fidelity and temporal continuity, but they do not reflect whether player commands are followed by timely visual reactions. Therefore, a video-only model may assign high quality to a visually clear stream even when response time is high.
+
+The interactivity-only view corresponds to the delay, response-time, and synchronization behavior reported in Figures~\mbox{\ref{fig:delay}} and~\mbox{\ref{fig:interactivity_frameloss}}. These metrics capture action--reaction responsiveness and command/video synchronization, but they do not reflect visual degradation caused by compression, frame interpolation, or bandwidth limitations. Therefore, an interactivity-only model may assign high quality to a responsive session even when the rendered video quality is degraded.
+
+The proposed QoE model combines both dimensions, as shown in Figure~\mbox{\ref{fig:qoe_three_games}}. This joint formulation is important for cloud gaming because perceived quality depends simultaneously on visual fidelity and responsiveness. Across the evaluated games and bandwidth regimes, the combined QoE score preserves the monotonic QoE--bandwidth relationship observed in real sessions and shows bounded deviations between real and synthetic traces. This behavior indicates that the proposed model is more suitable than video-only, interactivity-only, or QoS-only interpretations for validating QoE-preserving synthetic cloud gaming traffic. A purely QoS-based baseline, such as bandwidth, latency, jitter, or packet loss alone, cannot capture the reconstructed video quality and game-specific visual artifacts, while a purely video-based baseline cannot capture command responsiveness. Thus, the proposed model provides a more complete objective proxy for comparing real and synthetic cloud gaming sessions.}
