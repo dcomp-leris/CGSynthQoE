@@ -10,17 +10,21 @@ import argparse
 import glob
 
 class FramesToVideoConverter:
-    def __init__(self, frames_folder, output_file=None, fps=30):
+    def __init__(self, frames_folder, output_file=None, fps=30, force_glob=False):
         """
         Initialize the frames to video converter.
-        
+
         Args:
             frames_folder (str): Path to the folder containing frames
             output_file (str): Path to the output video file (default: based on folder name)
             fps (int): Frames per second for the output video
+            force_glob (bool): Use a glob pattern instead of a numbered sequence.
+                Robust to gaps in numbered frames (e.g. dropped frames), which would
+                otherwise make ffmpeg's sequence demuxer stop at the first missing index.
         """
         self.frames_folder = frames_folder
         self.fps = fps
+        self.force_glob = force_glob
         
         if output_file is None:
             # Use folder name as base for output
@@ -52,7 +56,12 @@ class FramesToVideoConverter:
                 # Sort to get consistent ordering
                 frame_files.sort()
                 print(f"Found {len(frame_files)} frames with pattern {pattern}")
-                
+
+                # Glob mode: collect every present frame regardless of gaps in
+                # a numbered sequence (ffmpeg expands the glob and sorts itself).
+                if self.force_glob:
+                    return os.path.join(self.frames_folder, pattern), len(frame_files)
+
                 # Determine if frames follow a sequence pattern (e.g., frame_001.jpg)
                 first_file = os.path.basename(frame_files[0])
                 
@@ -150,16 +159,20 @@ def main():
     parser.add_argument("frames_folder", help="Path to folder containing image frames")
     parser.add_argument("-f", "--fps", type=int, default=30, 
                         help="Frames per second for output video (default: 30)")
-    parser.add_argument("-o", "--output", 
+    parser.add_argument("-o", "--output",
                         help="Output video file (default: based on folder name)")
-    
+    parser.add_argument("--glob", action="store_true",
+                        help="Use a glob pattern instead of a numbered sequence "
+                             "(robust to gaps from dropped frames)")
+
     args = parser.parse_args()
-    
+
     try:
         converter = FramesToVideoConverter(
             frames_folder=args.frames_folder,
             output_file=args.output,
-            fps=args.fps
+            fps=args.fps,
+            force_glob=args.glob
         )
         
         success = converter.convert_to_video()
