@@ -1,0 +1,16 @@
+\begin{table}[t]
+  \centering
+  \caption{Sensitivity of the objective QoE model to the video/interactivity weight ($\delta_{\mathrm{vid}}+\delta_{\mathrm{Int}}=1$), evaluated against subjective MOS over 5 bandwidths $\times$ \{real, synth\}. MAE and MOS are normalized to $[0,1]$; $\rho$ is Spearman rank correlation at the best weight. Interactivity term: $Q_{\mathrm{Int}}=\beta Q_{\mathrm{delay}}+(1-\beta)Q_{\mathrm{sync}}$, $\beta=0.5$ (delay included; matches the Fig.~9 $Q_{\mathrm{Int}}$).}
+  \label{tab:weight-sensitivity-delay_inclusive}
+  \begin{tabular}{lrrrrr}
+    \toprule
+    Game & $\delta_{\mathrm{vid}}^\star$ & $\delta_{\mathrm{Int}}^\star$ & Best MAE & MAE @ 0.5 & Spearman $\rho$ \\
+    \midrule
+    Fortnite & 1.00 & 0.00 & 0.108 & 0.158 & 0.964 \\
+    Forza & 0.60 & 0.40 & 0.091 & 0.094 & 0.804 \\
+    Kombat & 1.00 & 0.00 & 0.117 & 0.147 & 0.964 \\
+    \midrule
+    \textbf{Overall} & \textbf{0.80} & \textbf{0.20} & \textbf{0.119} & \textbf{0.133} & \textbf{0.685} \\
+    \bottomrule
+  \end{tabular}
+\end{table}

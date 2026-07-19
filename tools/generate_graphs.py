@@ -818,10 +818,14 @@ def plot_qoe_real_vs_synth(
 ) -> None:
     """Plot overall QoE (0-1) vs bandwidth for Real vs Synth.
 
-    QoE_0-1 = delta_vid * Q_video + delta_Int * Q_Interactivity
+    QoE_0-1 = delta_vid * Q_video + delta_Int * Q_sync
 
     - Q_video is derived from AvgVMAF normalized to [0,1].
-    - Q_Interactivity is currently Q_sync = (Q_Vsmooth + Q_Csmooth) / 2.
+    - The interactivity term is Q_sync = (Q_Vsmooth + Q_Csmooth) / 2 (frame/
+      command smoothness). The response-time Q_delay penalty is deliberately
+      excluded here; it is used only in the standalone Q_Int figure, because in
+      this dataset the delay term is roughly flat across bandwidth and degrades
+      agreement with the subjective MOS.
     """
     w_sum = delta_vid + delta_int
     if w_sum <= 0:

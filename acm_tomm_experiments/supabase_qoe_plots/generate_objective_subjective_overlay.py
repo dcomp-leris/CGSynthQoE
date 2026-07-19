@@ -3,10 +3,18 @@
 Overlay the subjective QoE (MOS) on the paper's objective QoE-vs-bandwidth
 figures, per game.
 
-The objective QoE model output is already normalized to [0,1]
-(QoE = 0.5*Q_video + 0.5*Q_sync, with Q_video = AvgVMAF/100 and
- Q_sync = 0.5*(Q_Vsmooth + Q_Csmooth); same computation as
- tools/generate_graphs.py::plot_qoe_real_vs_synth).
+The objective QoE model output is already normalized to [0,1]:
+
+    QoE     = 0.5*Q_video + 0.5*Q_sync        (delta_vid = delta_Int = 0.5)
+    Q_sync  = 0.5*(Q_Vsmooth + Q_Csmooth)
+    Q_video = AvgVMAF/100
+
+The interactivity term here is Q_sync (frame/command smoothness), WITHOUT the
+response-time Q_delay penalty. Q_delay is used only in the standalone
+interactivity-quality figure (Fig. 9, Q_Int = beta*Q_delay + (1-beta)*Q_sync);
+it is deliberately excluded from the QoE model because, in this dataset, the
+delay term is roughly flat across bandwidth and degrades agreement with the
+subjective MOS. Same component definitions as tools/generate_graphs.py.
 
 Because the subjective MOS is rescaled to the SAME [0,1] range, objective and
 subjective QoE live on one shared scale — they are drawn on a single y-axis and
@@ -103,8 +111,16 @@ def _smooth_ratio(root, num, den):
     return None
 
 
+# overall QoE weights   QoE = DELTA_VID*Q_video + DELTA_INT*Q_sync
+DELTA_VID, DELTA_INT = 0.5, 0.5
+
+
 def objective_qoe(game, bw_label, vmaf_cache, kind):
-    """kind in {'real','synth'}; returns QoE in [0,1] or None."""
+    """kind in {'real','synth'}; returns QoE in [0,1] or None.
+
+    QoE = DELTA_VID*Q_video + DELTA_INT*Q_sync (interactivity term = Q_sync,
+    delay excluded; see module docstring).
+    """
     key = (game, f"{bw_label}_{game}")
     vmaf = vmaf_cache.get(key)
     if vmaf is None:
@@ -117,7 +133,7 @@ def objective_qoe(game, bw_label, vmaf_cache, kind):
     if vsmooth is None or csmooth is None:
         return None
     q_sync = 0.5 * (vsmooth + csmooth)
-    return 0.5 * q_video + 0.5 * q_sync
+    return DELTA_VID * q_video + DELTA_INT * q_sync
 
 
 # --------------------------------------------------------------------------- #
