@@ -218,10 +218,10 @@ def plot_game(game, vmaf_real, vmaf_synth, subj, scale="shared"):
         subj_axis = ax      # points share the 0-1 axis
     ax2.tick_params(axis="y", labelcolor=INK, labelsize=TICK_FS)
 
-    subj_axis.errorbar(x - bw / 2, sr_m, yerr=sr_e, color='silver', marker="o",
+    subj_axis.errorbar(x - bw / 2, sr_m, yerr=sr_e, color='black', marker="o",
                        ms=8, lw=4, ls="-", capsize=4, zorder=5,
                        markeredgecolor="white", markeredgewidth=0.8)
-    subj_axis.errorbar(x + bw / 2, ss_m, yerr=ss_e, color='black', marker="s",
+    subj_axis.errorbar(x + bw / 2, ss_m, yerr=ss_e, color='silver', marker="s",
                        ms=8, lw=4, ls="--", capsize=4, zorder=5,
                        markeredgecolor="white", markeredgewidth=0.8)
 
@@ -233,9 +233,9 @@ def plot_game(game, vmaf_real, vmaf_synth, subj, scale="shared"):
                        label="Objective QoE — Real"),
         mpatches.Patch(facecolor=synth_c, edgecolor="black", hatch=hatch,
                        label="Objective QoE — Synth"),
-        plt.Line2D([], [], color='silver', marker="o", ms=8, lw=4, ls="-",
+        plt.Line2D([], [], color='black', marker="o", ms=8, lw=4, ls="-",
                    label="Subjective MOS — Real"),
-        plt.Line2D([], [], color='black', marker="s", ms=8, lw=4, ls="--",
+        plt.Line2D([], [], color='silver', marker="s", ms=8, lw=4, ls="--",
                    label="Subjective MOS — Synth"),
     ]
     ax2.legend(handles=handles, loc="lower right", fontsize=18,
