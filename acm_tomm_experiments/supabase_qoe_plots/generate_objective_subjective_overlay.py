@@ -66,7 +66,7 @@ plt.rcParams.update({
     "figure.dpi": 120, "savefig.dpi": 300, "font.size": 12,
     "font.family": "DejaVu Sans", "axes.edgecolor": MUTED,
     "axes.labelcolor": INK, "text.color": INK,
-    "xtick.color": MUTED, "ytick.color": MUTED,
+    "xtick.color": INK, "ytick.color": INK,
     "axes.axisbelow": True, "legend.frameon": True,
 })
 
@@ -193,7 +193,7 @@ def plot_game(game, vmaf_real, vmaf_synth, subj, scale="shared"):
     ax.bar(x + bw / 2, obj_s, width=bw, color=synth_c, edgecolor="black",
            linewidth=1.0, hatch=hatch, zorder=2, label="Objective QoE — Synth")
 
-    AX_FS, TICK_FS = 18, 15  # larger fonts — used as a small figure in the paper
+    AX_FS, TICK_FS = 20, 18  # larger fonts — used as a small figure in the paper
     ax.set_xticks(x)
     ax.set_xticklabels([str(b) for b in BW_VALUES])
     ax.set_xlabel("Bandwidth (Mbit/s)", fontsize=AX_FS)
@@ -213,32 +213,32 @@ def plot_game(game, vmaf_real, vmaf_synth, subj, scale="shared"):
         subj_axis = ax2  # points live on the 1-5 axis
     else:
         ax2.set_ylim(0.0, 1.0)  # mirror of the left scale
-        ax2.set_ylabel("Subjective QoE  (MOS rescaled to [0,1])", color=INK,
+        ax2.set_ylabel("Subjective QoE  (MOS 0-1)", color=INK,
                        fontsize=AX_FS)
         subj_axis = ax      # points share the 0-1 axis
-    ax2.tick_params(axis="y", labelcolor=MUTED, labelsize=TICK_FS)
+    ax2.tick_params(axis="y", labelcolor=INK, labelsize=TICK_FS)
 
-    subj_axis.errorbar(x - bw / 2, sr_m, yerr=sr_e, color=C_REAL, marker="o",
-                       ms=8, lw=2.4, ls="-", capsize=4, zorder=5,
+    subj_axis.errorbar(x - bw / 2, sr_m, yerr=sr_e, color='silver', marker="o",
+                       ms=8, lw=4, ls="-", capsize=4, zorder=5,
                        markeredgecolor="white", markeredgewidth=0.8)
-    subj_axis.errorbar(x + bw / 2, ss_m, yerr=ss_e, color=C_SYNTH, marker="s",
-                       ms=8, lw=2.4, ls="--", capsize=4, zorder=5,
+    subj_axis.errorbar(x + bw / 2, ss_m, yerr=ss_e, color='black', marker="s",
+                       ms=8, lw=4, ls="--", capsize=4, zorder=5,
                        markeredgecolor="white", markeredgewidth=0.8)
 
-    ax.set_title(f"{game}: objective QoE model vs subjective MOS",
-                 color=synth_c, fontweight="bold", fontsize=15)
+    #ax.set_title(f"{game}: objective QoE model vs subjective MOS",
+    #             color=synth_c, fontweight="bold", fontsize=15)
 
     handles = [
         mpatches.Patch(facecolor=real_c, edgecolor="black", hatch=hatch,
                        label="Objective QoE — Real"),
         mpatches.Patch(facecolor=synth_c, edgecolor="black", hatch=hatch,
                        label="Objective QoE — Synth"),
-        plt.Line2D([], [], color=C_REAL, marker="o", ms=8, lw=2.4, ls="-",
+        plt.Line2D([], [], color='silver', marker="o", ms=8, lw=4, ls="-",
                    label="Subjective MOS — Real"),
-        plt.Line2D([], [], color=C_SYNTH, marker="s", ms=8, lw=2.4, ls="--",
+        plt.Line2D([], [], color='black', marker="s", ms=8, lw=4, ls="--",
                    label="Subjective MOS — Synth"),
     ]
-    ax2.legend(handles=handles, loc="lower right", fontsize=9,
+    ax2.legend(handles=handles, loc="lower right", fontsize=18,
                framealpha=0.95, edgecolor="black")
 
     fig.tight_layout()
