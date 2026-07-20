@@ -754,25 +754,6 @@ Make sure to run this command in the correct directory containing your PNG frame
   - The OpenCV in your Python environment must have GStreamer support (see OpenCV with GStreamer Support section)
 
 
-### Please Cite the paper:
-
-    @inproceedings{10.1145/3744969.3748445,
-    author = {Shirmarz, Alireza and de Castro Ariel, Goes and Lopes, Victor Hugo Schneider and Verdi, Fabio and Luizelli, Marcelo and Rothenberg, Christian},
-    title = {CGSynth: Cloud Gaming Synthesizer},
-    year = {2025},
-    isbn = {9798400720260},
-    publisher = {Association for Computing Machinery},
-    address = {New York, NY, USA},
-    url = {https://doi.org/10.1145/3744969.3748445},
-    doi = {10.1145/3744969.3748445},
-    booktitle = {Proceedings of the ACM SIGCOMM 2025 Posters and Demos},
-    pages = {175–177},
-    numpages = {3},
-    keywords = {AI-based Network Traffic Generation, Cloud Gaming Traffic Synthesis, Quality of Experience (QoE) Evaluation},
-    location = {Coimbra, Portugal},
-    series = {ACM SIGCOMM Posters and Demos '25}
-    }
-
  ### Contact
  
  **Email:** ashirmarz@ufscar.br
