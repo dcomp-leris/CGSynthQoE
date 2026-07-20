@@ -304,7 +304,7 @@ python tools/create_video_from_frames.py --frames-dir output_frames/Example --ou
 
 Cloud gaming's unique network traffic is challenging to reproduce for research. This demo introduces Cloud Gaming Synthesizer (CGSynth), a platform that generates realistic, configurable synthetic cloud gaming (CG) traffic. CGSynth captures real CG patterns and allows their synthetic reproduction with user-defined flow/packet parameters and deterministic protocol headers. It employs a GRU for accurate, order-preserving timestamp generation and AI-based video interpolation for realistic payloads. Crucially, CGSynth integrates a QoE evaluation module using objective (e.g., SSIM) and subjective metrics (e.g., MOS) to validate synthetic traffic's video quality and responsiveness against real streams.
 
-<img width="1210" height="714" alt="image" src="https://github.com/user-attachments/assets/ddfacb9e-21da-4580-bfc7-fdb38a553b66" />
+<img width="772" height="430" alt="cgsynth_pipeline" src="https://github.com/user-attachments/assets/f9066fa4-e171-4d54-a1e7-a6d0bfa3461e" />
 
 ## Architecture
 
