@@ -1,12 +1,9 @@
-# DEMO: CGSynth: Cloud Gaming Synthesizer
+# QoE Comparison from Real to Synthetic: Cloud Gaming Traffic Generation and QoE Modeling
 
-**Note:** This paper will be presented on 2025/09/25 in the Sigcomm'25 conference.
+**Note:** This paper has been submitted for TOMM journal paper and will be published publically.
 
 <!--[![Conference](https://img.shields.io/badge/submitted-Netsoft2025-blue)](https://netsoft2025.ieee-netsoft.org/)-->
-[![Conference](https://img.shields.io/badge/accepted-Sigcomm'25-blue)](https://conferences.sigcomm.org/sigcomm/2025/accepted-posters-demos/)
 [![CGReplay](https://img.shields.io/badge/CGReplay-Repository-green)](https://github.com/dcomp-leris/CGReplay.git)
-[![Paper](https://img.shields.io/badge/Paper-Zenodo-red)](https://zenodo.org/records/16968173)
-[![Demonstration](https://img.shields.io/badge/Sigcomm2025-Demonstration-blue)](https://conferences.sigcomm.org/sigcomm/2025/papers-posters-demos-info/)
 [![ACM](https://img.shields.io/badge/Paper-ACM-red)](https://dl.acm.org/doi/10.1145/3744969.3748445)
 [![ACM](https://img.shields.io/badge/Video-CGSynth-blue)](https://drive.google.com/file/d/1LrWFbQx8SufftGh4FA4Pdk6-v_bhxG9B/view?usp=drive_link)
 
@@ -779,4 +776,3 @@ Make sure to run this command in the correct directory containing your PNG frame
  ### Contact
  
  **Email:** ashirmarz@ufscar.br
-
