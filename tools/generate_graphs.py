@@ -520,7 +520,7 @@ def plot_qvideo_summary_real_vs_synth(
     ax.set_ylim(0.0, 1.0)
     ax.set_axisbelow(True)
     ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.7, zorder=0)
-    ax.legend(fontsize=14, frameon=True, edgecolor="black", ncol=3, loc="lower right", facecolor="white", framealpha=1)
+    ax.legend(fontsize=15, frameon=True, edgecolor="black", ncol=3, loc="lower right", facecolor="white", framealpha=1)
 
     fig.tight_layout()
 
@@ -623,8 +623,8 @@ def plot_delay_and_rt_real_vs_synth(
     rt_synth_color = GAME_COLORS["Kombat"]["synth"]
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    ax.set_xlabel("Bandwidth (Mbps)", fontsize=24)
-    ax.set_ylabel("Delay / Response Time (ms)", fontsize=24)
+    ax.set_xlabel("Bandwidth (Mbps)", fontsize=26)
+    ax.set_ylabel("Delay / Response Time (ms)", fontsize=26)
 
     line_dr, = ax.plot(
         x, d_r, color=delay_real_color, linestyle="-", marker="v",
@@ -645,13 +645,13 @@ def plot_delay_and_rt_real_vs_synth(
 
     ax.set_xticks(x)
     ax.set_xticklabels([f"{val:.0f}" for val in bw])
-    ax.tick_params(axis="both", labelsize=22)
+    ax.tick_params(axis="both", labelsize=24)
     ax.set_axisbelow(True)
     ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.7, zorder=0)
 
     handles = [line_dr, line_ds, line_rt_r, line_rt_s]
     labels_legend = [h.get_label() for h in handles]
-    ax.legend(handles, labels_legend, fontsize=20, frameon=True, edgecolor="black", loc="center right", facecolor="white", framealpha=1)
+    ax.legend(handles, labels_legend, fontsize=24, frameon=True, edgecolor="black", loc="center right", facecolor="white", framealpha=1)
 
     fig.tight_layout()
 
@@ -786,13 +786,13 @@ def plot_qint_real_vs_synth(
 
     ax.set_xticks(x)
     ax.set_xticklabels([f"{val:.0f}" for val in bw])
-    ax.tick_params(axis="both", labelsize=22)
+    ax.tick_params(axis="both", labelsize=25)
     ax.set_axisbelow(True)
     ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.7, zorder=0)
 
     handles = [bars_real, bars_synth]
     labels_legend = [h.get_label() for h in handles]
-    ax.legend(handles, labels_legend, loc="upper right", fontsize=20, frameon=True, edgecolor="black", facecolor="white", framealpha=1)
+    ax.legend(handles, labels_legend, loc="upper right", fontsize=28, frameon=True, edgecolor="black", facecolor="white", framealpha=1)
 
     fig.tight_layout()
 
@@ -949,7 +949,7 @@ def plot_qoe_real_vs_synth(
 
     handles = [bars_real, bars_synth]
     labels_legend = [h.get_label() for h in handles]
-    ax1.legend(handles, labels_legend, loc="lower right", fontsize=20, framealpha=1, edgecolor="black", facecolor="white")
+    ax1.legend(handles, labels_legend, loc="lower right", fontsize=26, framealpha=1, edgecolor="black", facecolor="white")
 
     fig.tight_layout()
 
