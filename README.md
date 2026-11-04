@@ -1,11 +1,15 @@
 # QoE Comparison from Real to Synthetic: Cloud Gaming Traffic Generation and QoE Modeling
 
-**Note:** This paper has been submitted for TOMM journal paper and will be published publically.
+**Note:** This work has been published in *ACM Transactions on Multimedia Computing, Communications, and Applications (TOMM)*. If you use this repository, please cite:
+
+Alireza Shirmarz, Ariel Góes de Castro, Victor Hugo Schneider Lopes, Fábio Luciano Verdi, Simone Ferlin, Christian Esteve Rothenberg, and Marcelo Caggiani Luizelli. 2026. QoE Comparison from Real to Synthetic: Cloud Gaming Traffic Generation and QoE Modeling. ACM Trans. Multimedia Comput. Commun. Appl. Just Accepted (October 2026). https://doi.org/10.1145/3860633
+
 
 <!--[![Conference](https://img.shields.io/badge/submitted-Netsoft2025-blue)](https://netsoft2025.ieee-netsoft.org/)-->
-[![CGReplay](https://img.shields.io/badge/CGReplay-Repository-green)](https://github.com/dcomp-leris/CGReplay.git)
-[![ACM](https://img.shields.io/badge/Paper-ACM-red)](https://dl.acm.org/doi/10.1145/3744969.3748445)
-[![ACM](https://img.shields.io/badge/Video-CGSynth-blue)](https://drive.google.com/file/d/1LrWFbQx8SufftGh4FA4Pdk6-v_bhxG9B/view?usp=drive_link)
+[![CGReplay](https://img.shields.io/badge/CGReplay-Repository-red)](https://github.com/dcomp-leris/CGReplay.git)
+[![CGSynth](https://img.shields.io/badge/CGSynth-Repository-blue)](https://github.com/dcomp-leris/CGSynth)
+[![FlowSync](https://img.shields.io/badge/FlowSync-Repository-green)](https://github.com/arielgoes/FlowSync)
+[![ACM](https://img.shields.io/badge/Paper-ACM-orange)](https://dl.acm.org/doi/10.1145/3860633)
 
 
 *For more details, please refer to the Wiki page of this repository.*
@@ -26,6 +30,7 @@
   - [Frame Extraction and Video Creation](#2-frame-extraction-and-video-creation)
   - [Frame Generation and Degradation Toolkit](#3-frame-generation-and-degradation-toolkit)
   - [Quality Metrics Tools](#4-quality-metrics-tools)
+- [Related Projects](#related-projects)
 - [Notes](#notes)
 - [Troubleshooting](#troubleshooting)
   - [OpenCV + NumPy (cv2 import errors)](#troubleshooting-opencv--numpy-cv2-import-errors)
@@ -302,7 +307,7 @@ python tools/create_video_from_frames.py --frames-dir output_frames/Example --ou
 ```
 
 
-Cloud gaming's unique network traffic is challenging to reproduce for research. This demo introduces Cloud Gaming Synthesizer (CGSynth), a platform that generates realistic, configurable synthetic cloud gaming (CG) traffic. CGSynth captures real CG patterns and allows their synthetic reproduction with user-defined flow/packet parameters and deterministic protocol headers. It employs a GRU for accurate, order-preserving timestamp generation and AI-based video interpolation for realistic payloads. Crucially, CGSynth integrates a QoE evaluation module using objective (e.g., SSIM) and subjective metrics (e.g., MOS) to validate synthetic traffic's video quality and responsiveness against real streams.
+Cloud gaming's unique network traffic is challenging to reproduce for research. This demo introduces Cloud Gaming Synthesizer (CGSynth), a platform that generates realistic, configurable synthetic cloud gaming (CG) traffic. CGSynth captures real CG patterns and allows their synthetic reproduction with user-defined flow/packet parameters and deterministic protocol headers. It employs a GRU for accurate, order-preserving timestamp generation and AI-based video interpolation for realistic payloads. Crucially, CGSynth integrates a QoE evaluation module using objective (e.g., SSIM) and subjective metrics (e.g., MOS) to validate synthetic traffic's video quality and responsiveness against real streams. The timing side of the synthetic traffic (GRU-based inter-packet interval generation) is developed in the companion repository [FlowSync](https://github.com/arielgoes/FlowSync);.
 
 <img width="772" height="430" alt="cgsynth_pipeline" src="https://github.com/user-attachments/assets/f9066fa4-e171-4d54-a1e7-a6d0bfa3461e" />
 
@@ -508,6 +513,14 @@ pip install -r frame_gen/tools/requirements_tools.txt
      ```
 
 For detailed usage instructions of each quality metrics tool, please refer to the README.md in the `frame_gen/tools` directory.
+
+## Related Projects
+
+This work builds on and complements the following projects:
+
+- **[CGSynth](https://github.com/dcomp-leris/CGSynth)** (ACM SIGCOMM2025): the demo version of CGSynth, presented at SIGCOMM'25. It introduced the platform and its QoE evaluation module, and is the earlier, shorter version of the work in this repository.
+- **[CGReplay](https://github.com/dcomp-leris/CGReplay)** (IEEE Netsoft 2025): captures and replays player commands and video frames in a synchronized action-reaction loop. In this repository, CGReplay is the player/server used for the live experiments, and its reference and received frames are the real-stream baseline for the QoE comparison.
+- **[FlowSync](https://github.com/arielgoes/FlowSync)**: provides the GRU-based, order-preserving inter-packet interval (IPI) generation used for the timing of the synthetic traffic. This repository handles the video payload and QoE evaluation.
 
 ## Notes
 
